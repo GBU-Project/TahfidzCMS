@@ -142,7 +142,7 @@
 			</button>
 		</div>
 
-		<form id="form-edit-modal" method="post" action="" class="space-y-4">
+		<?php echo form_open('', array('id' => 'form-edit-modal', 'class' => 'space-y-4')); ?>
 			<div>
 				<span id="modal-info-siswa" class="text-xs text-gray-500 block"></span>
 				<span id="modal-info-materi" class="text-sm font-semibold text-gray-800 block"></span>
@@ -187,7 +187,7 @@
 					Batal
 				</button>
 			</div>
-		</form>
+		<?php echo form_close(); ?>
 	</div>
 </div>
 

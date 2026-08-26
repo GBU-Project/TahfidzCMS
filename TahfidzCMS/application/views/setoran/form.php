@@ -9,7 +9,7 @@
 		</a>
 	</div>
 
-	<form method="post" action="<?php echo site_url('setoran/simpan'); ?>" enctype="multipart/form-data" id="form-setoran" class="space-y-6">
+	<?php echo form_open_multipart('setoran/simpan', array('id' => 'form-setoran', 'class' => 'space-y-6')); ?>
 		
 		<!-- Panel 1: Data Santri & Waktu -->
 		<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -194,7 +194,7 @@
 				Batal
 			</a>
 		</div>
-	</form>
+	<?php echo form_close(); ?>
 </div>
 
 <script>

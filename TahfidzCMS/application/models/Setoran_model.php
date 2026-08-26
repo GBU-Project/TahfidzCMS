@@ -18,7 +18,10 @@ class Setoran_model extends CI_Model
 	}
 
 	/**
-	 * Generate kode setoran baru secara berurutan (misal: STR-0001, STR-0002).
+	 * Generate kode setoran untuk PREVIEW di form saja (ditampilkan sebelum
+	 * disimpan). Kode SESUNGGUHNYA yang tersimpan dihasilkan di dalam
+	 * create(), berbasis insert_id — lihat catatan di sana kenapa preview
+	 * ini tidak dipakai langsung untuk insert.
 	 *
 	 * @return string
 	 */
@@ -31,13 +34,13 @@ class Setoran_model extends CI_Model
 
 		$row = $this->db->get()->row();
 		if (! $row || empty($row->kode_setoran)) {
-			return 'STR-0001';
+			return 'STR-000001';
 		}
 
 		$parts = explode('-', $row->kode_setoran);
 		$next_num = isset($parts[1]) ? ((int) $parts[1] + 1) : 1;
 
-		return sprintf('STR-%04d', $next_num);
+		return sprintf('STR-%06d', $next_num);
 	}
 
 	/**
@@ -119,15 +122,25 @@ class Setoran_model extends CI_Model
 	/**
 	 * Tambah setoran baru dengan atomic database transaction.
 	 *
-	 * @param array $data Data kolom tabel `setoran`
+	 * Catatan desain (perbaikan race condition): kode_setoran TIDAK dihitung
+	 * dari "baca baris terakhir + 1" sebelum insert — pendekatan itu rawan
+	 * duplikat kalau dua guru submit persis bersamaan (keduanya baca nomor
+	 * terakhir yang sama sebelum salah satu sempat insert). Sebagai gantinya,
+	 * baris di-insert dulu dengan kode_setoran sementara yang unik (berbasis
+	 * uniqid), lalu langsung ditimpa dengan kode final yang diturunkan dari
+	 * insert_id (dijamin unik oleh auto-increment MySQL) — semua dalam
+	 * transaction yang sama.
+	 *
+	 * @param array $data Data kolom tabel `setoran`. Nilai 'kode_setoran' yang
+	 *                     dikirim (jika ada) akan DIABAIKAN demi konsistensi ini.
 	 * @return int ID setoran yang baru dibuat
 	 * @throws Exception
 	 */
 	public function create(array $data)
 	{
-		if (empty($data['kode_setoran'])) {
-			$data['kode_setoran'] = $this->generate_kode_setoran();
-		}
+		// Kode sementara, hanya untuk memenuhi constraint NOT NULL UNIQUE
+		// selama sepersekian detik sebelum ditimpa kode final di bawah.
+		$data['kode_setoran'] = 'TMP-' . uniqid('', true);
 
 		// Hitung poin secara konsisten
 		$poin = $this->poin_calculator->hitung_poin($data['nilai'], $data['status']);
@@ -135,16 +148,21 @@ class Setoran_model extends CI_Model
 
 		$this->db->trans_begin();
 
-		// 1. Insert data setoran
+		// 1. Insert data setoran (dengan kode sementara)
 		$this->db->insert($this->table, $data);
 		$insert_id = $this->db->insert_id();
 
-		// 2. Atomic update total_poin siswa
+		// 2. Timpa dengan kode final berbasis insert_id -> dijamin unik,
+		//    tidak mungkin bentrok walau ada request bersamaan.
+		$kode_final = sprintf('STR-%06d', $insert_id);
+		$this->db->update($this->table, array('kode_setoran' => $kode_final), array('id' => $insert_id));
+
+		// 3. Atomic update total_poin siswa
 		$this->db->set('total_poin', 'total_poin + ' . (int) $poin, FALSE)
 			->where('nisn', $data['nisn'])
 			->update('siswa');
 
-		// 3. Ambil total poin terbaru untuk evaluasi badge
+		// 4. Ambil total poin terbaru untuk evaluasi badge
 		$siswa = $this->db->select('total_poin')->where('nisn', $data['nisn'])->get('siswa')->row();
 		if ($siswa) {
 			$new_badge = $this->poin_calculator->hitung_badge($siswa->total_poin);

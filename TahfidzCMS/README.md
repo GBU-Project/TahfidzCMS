@@ -8,9 +8,11 @@ migrasi dari prototipe Google Apps Script.
 ```
 application/
 ├── config/
+│   ├── config.php       ← konfigurasi proteksi CSRF (gabungkan ke config.php CI3)
 │   ├── database.php     ← sudah pakai getenv(), tinggal isi kredensial
 │   ├── routes.php       ← rute web (session) & api (token) sudah dipetakan
-│   └── autoload.php     ← gabungkan ke autoload.php CI3 bawaan Anda
+│   ├── autoload.php     ← gabungkan ke autoload.php CI3 bawaan Anda
+│   └── mimes.php        ← mapping MIME audio/webm untuk perekam suara browser
 ├── core/
 │   ├── MY_Controller.php       ← guard session + role, untuk semua controller web
 │   └── MY_API_Controller.php   ← guard Bearer token, untuk semua controller api/*
@@ -19,31 +21,46 @@ application/
 │   ├── Guru_kelas_model.php    ← satu-satunya sumber "kelas yang diampu guru"
 │   ├── Api_token_model.php     ← terbit/validasi/cabut token API
 │   ├── Kelas_model.php         ← CRUD data master kelas
-│   └── Siswa_model.php         ← CRUD data siswa (nisn = primary key, anti-duplikat)
+│   ├── Siswa_model.php         ← CRUD data siswa & leaderboard
+│   └── Setoran_model.php       ← CRUD & transaksi atomic setoran hafalan
 ├── libraries/
-│   └── Upload_handler.php      ← upload foto profil & (nanti) audio setoran, tervalidasi
+│   ├── Poin_calculator.php     ← rumus hitung poin & badge hafalan
+│   └── Upload_handler.php      ← upload foto profil & rekaman audio bukti setoran
 ├── controllers/
 │   ├── Auth.php          ← login/logout web (session)
-│   ├── Dashboard.php     ← contoh pemakaian MY_Controller + render()
+│   ├── Dashboard.php     ← ringkasan statistik & aktivitas per role
+│   ├── Setoran.php       ← input setoran & perekam audio WebM
+│   ├── Penilaian.php     ← koreksi & review audio penilaian
+│   ├── Riwayat.php       ← filter histori setoran
+│   ├── Progress.php      ← matriks 30 Juz & target hafalan santri
+│   ├── Leaderboard.php   ← ranking santri & podium Top 3
+│   ├── Laporan.php       ← rekapitulasi & export CSV/Excel
 │   ├── Users.php         ← CRUD users/siswa/guru-kelas, khusus admin
 │   ├── Kelas.php         ← CRUD data master kelas, khusus admin
-│   └── api/
-│       └── Auth.php      ← login/logout api (token)
+│   ├── Profile.php       ← update identitas & ganti password
+│   └── api/              ← endpoint REST API JSON (Auth, Setoran, Riwayat, Progress, Leaderboard, Dashboard)
 ├── views/
 │   ├── auth/login.php
 │   ├── dashboard/index.php
+│   ├── setoran/{index,form}.php
+│   ├── penilaian/index.php
+│   ├── riwayat/index.php
+│   ├── progress/index.php
+│   ├── leaderboard/index.php
+│   ├── laporan/index.php
 │   ├── users/{index,form}.php
 │   ├── kelas/index.php
+│   ├── profile/index.php
 │   └── templates/{header,sidebar,footer}.php
 └── helpers/
     └── format_helper.php  ← format tanggal ID & durasi audio
 
 uploads/
 ├── profile/          ← foto profil users
-└── setoran_audio/    ← rekaman audio bukti setoran (Fase 3)
+└── setoran_audio/    ← rekaman audio bukti setoran
 
 database/
-└── tahfidzcms.sql    ← skema lengkap (lihat chat sebelumnya / file terpisah)
+└── tahfidzcms.sql    ← skema lengkap database MySQL
 ```
 
 ## Cara pakai skeleton ini

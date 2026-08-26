@@ -123,7 +123,10 @@ class Setoran extends MY_Controller
 		$durasi_audio = $this->input->post('durasi_audio');
 
 		$data_setoran = array(
-			'kode_setoran'       => $this->Setoran_model->generate_kode_setoran(),
+			// 'kode_setoran' sengaja TIDAK di-generate di sini — create()
+			// di Setoran_model menentukan kode final secara atomic berbasis
+			// insert_id, untuk menghindari race condition. Lihat komentar
+			// di Setoran_model::create().
 			'nisn'               => $nisn,
 			'kelas_id'           => $siswa->kelas_id, // denormalisasi sengaja untuk menjaga histori kelas
 			'tanggal'            => $this->input->post('tanggal', TRUE),

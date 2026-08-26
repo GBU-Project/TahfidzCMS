@@ -117,7 +117,8 @@ class Setoran extends MY_API_Controller
 		}
 
 		$data_setoran = array(
-			'kode_setoran'       => $this->Setoran_model->generate_kode_setoran(),
+			// 'kode_setoran' sengaja TIDAK di-generate di sini — lihat
+			// komentar di Setoran_model::create() soal race condition.
 			'nisn'               => $nisn,
 			'kelas_id'           => $siswa->kelas_id,
 			'tanggal'            => $tanggal,

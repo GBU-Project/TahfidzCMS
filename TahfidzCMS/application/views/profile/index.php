@@ -4,7 +4,7 @@
 		<p class="text-sm text-gray-500">Kelola informasi data akun dan kata sandi Anda</p>
 	</div>
 
-	<form method="post" action="<?php echo site_url('profile/update'); ?>" enctype="multipart/form-data" class="space-y-6">
+	<?php echo form_open_multipart('profile/update', array('class' => 'space-y-6')); ?>
 		
 		<!-- Kartu Informasi Pengguna -->
 		<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -103,5 +103,5 @@
 			</button>
 		</div>
 
-	</form>
+	<?php echo form_close(); ?>
 </div>

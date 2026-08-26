@@ -1,7 +1,7 @@
 <h1 class="text-2xl font-bold mb-4"><?php echo $title; ?></h1>
 
 <div class="bg-white rounded-xl shadow p-6 max-w-2xl">
-	<form method="post" action="<?php echo site_url('users/simpan'); ?>" enctype="multipart/form-data" class="space-y-4">
+	<?php echo form_open_multipart('users/simpan', array('class' => 'space-y-4')); ?>
 
 		<?php if ($user): ?>
 			<input type="hidden" name="id" value="<?php echo $user->id; ?>">
@@ -97,7 +97,7 @@
 				Batal
 			</a>
 		</div>
-	</form>
+	<?php echo form_close(); ?>
 </div>
 
 <script>

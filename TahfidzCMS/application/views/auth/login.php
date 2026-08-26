@@ -17,7 +17,7 @@
 			</div>
 		<?php endif; ?>
 
-		<form method="post" action="<?php echo site_url('login'); ?>" class="space-y-4">
+		<?php echo form_open('login', array('class' => 'space-y-4')); ?>
 			<div>
 				<label class="block text-sm font-medium text-gray-700 mb-1">NIP / NISN</label>
 				<input type="text" name="username" required
@@ -32,7 +32,7 @@
 				class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-lg py-2 transition">
 				Masuk
 			</button>
-		</form>
+		<?php echo form_close(); ?>
 	</div>
 
 </body>

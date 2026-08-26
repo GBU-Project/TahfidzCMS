@@ -146,20 +146,27 @@ banyak fungsi) cukup ditulis SEKALI di sini.
 - [x] Controller `Laporan` (export CSV UTF-8 — deviasi dari rencana PHPSpreadsheet/xlsx asli, tapi tetap bisa dibuka Excel)
 - [x] Controller API `api/Dashboard`, `api/Riwayat`, `api/Progress`, `api/Leaderboard` (mengikuti logika & guard yang sama persis dengan versi web)
 
-**Fase 5 — Profil & Pemolesan**
+**Fase 5 — Profil & Pemolesan** ✅ *(selesai)*
 - [x] Controller `Profile` (edit profil, ganti password, upload foto)
 - [x] Validasi form menyeluruh (`form_validation` library) — sudah diterapkan di Setoran/Penilaian/Users/Profile
-- [ ] Testing role-based access menyeluruh (guru tidak bisa akses kelas lain, siswa tidak bisa akses data siswa lain) — **lihat catatan bug di bawah, sebagian celah sudah ditemukan & diperbaiki**
+- [x] Testing role-based access menyeluruh (guru tidak bisa akses kelas lain, siswa tidak bisa akses data siswa lain)
+
+**Fase 6 — Keamanan & Pengerasan (Hardening)** ✅ *(selesai)*
+- [x] CSRF Protection aktif di seluruh form POST web (`csrf_protection = TRUE`), otomatis via `form_open()`/`form_close()`.
+- [x] Endpoint API (`api/*`) dikecualikan dari proteksi CSRF karena menggunakan Bearer Token header (stateless).
 
 ---
 
-## 5a. Catatan Perbaikan (Code Review — lihat riwayat chat)
+## 5a. Catatan Perbaikan & Keamanan (Code Review)
 
 Saat review kode di branch `develop`, ditemukan dan diperbaiki:
 
-1. **[KRITIS] Kebocoran data antar role** — `Dashboard.php`, `Riwayat.php`, `Progress.php`, `Leaderboard.php` memakai `$this->role` yang sebelumnya tidak pernah didefinisikan di `MY_Controller`/`MY_API_Controller`, sehingga selalu `null` dan membuat akun **siswa** salah masuk ke cabang logika admin/guru (berpotensi melihat data siswa lain & riwayat sekolah secara penuh). **Fix**: properti `$role` kini diisi otomatis di kedua base controller saat sesi/token divalidasi.
-2. **[FUNGSIONAL] Upload rekaman audio gagal di Chrome/Firefox** — JS `MediaRecorder` menghasilkan `audio/webm`, tapi kode lama melabelinya sebagai `.mp3` palsu, kemungkinan besar ditolak validasi MIME CI3. **Fix**: JS kini jujur pakai `mediaRecorder.mimeType` asli, dan `Upload_handler` menerima ekstensi `webm`. **Perlu dicek manual**: `application/config/mimes.php` di instalasi CI3 harus memetakan ekstensi `webm` ke MIME audio, bukan cuma video.
-3. **[MINOR]** `Setoran_model::generate_kode_setoran()` berpotensi race condition kalau 2 guru submit persis bersamaan (duplikat kode ditolak UNIQUE constraint) — risiko rendah untuk skala sekolah, belum diperbaiki.
+1. **[KRITIS] Kebocoran data antar role** — `Dashboard.php`, `Riwayat.php`, `Progress.php`, `Leaderboard.php` memakai `$this->role` yang sebelumnya tidak pernah didefinisikan di `MY_Controller`/`MY_API_Controller`, sehingga selalu `null` dan membuat akun **siswa** salah masuk ke cabang logika admin/guru (berpotensi melihat data siswa lain & riwayat sekolah secara penuh). ✅ **Fix**: properti `$role` kini diisi otomatis di kedua base controller saat sesi/token divalidasi.
+2. **[FUNGSIONAL] Upload rekaman audio gagal di Chrome/Firefox** — JS `MediaRecorder` menghasilkan `audio/webm`, tapi kode lama melabelinya sebagai `.mp3` palsu, ditolak validasi MIME CI3. ✅ **Fix**: JS kini jujur pakai `mediaRecorder.mimeType` asli, `Upload_handler` menerima ekstensi `webm`, dan `application/config/mimes.php` baru ditambahkan untuk memetakan `webm` ke `audio/webm` juga (bukan cuma `video/webm` seperti bawaan CI3).
+3. **[MINOR] Race condition kode setoran** — sebelumnya `kode_setoran` dihitung dari "baca baris terakhir + 1" SEBELUM insert, rawan duplikat kalau dua guru submit bersamaan. ✅ **Fix**: `Setoran_model::create()` sekarang insert dulu dengan kode sementara unik (`uniqid`), lalu menimpa dengan kode final berbasis `insert_id` (dijamin unik oleh auto-increment MySQL) — semua dalam satu transaction. Format kode berubah dari `STR-0001` (4 digit) menjadi `STR-000001` (6 digit) untuk konsistensi dengan skala data yang lebih besar.
+4. **[KEAMANAN] Proteksi CSRF (Cross-Site Request Forgery)** — Semua form POST (`auth/login.php`, `users/form.php`, `profile/index.php`, `setoran/form.php`, `kelas/index.php`, `penilaian/index.php`) dikonversi ke `form_open()`/`form_close()` CI3 dengan konfigurasi `csrf_protection` aktif di `config.php`.
+
+Controller yang memanggil `generate_kode_setoran()` untuk mengisi `kode_setoran` sebelum insert (di `Setoran.php` & `api/Setoran.php`) sudah dibersihkan — fungsi itu sekarang HANYA dipakai untuk preview di form (`auto_kode`), tidak lagi mempengaruhi data yang benar-benar tersimpan.
 
 ---
 
