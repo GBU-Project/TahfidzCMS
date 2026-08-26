@@ -268,13 +268,106 @@ class Setoran_model extends CI_Model
 	 * Hitung total setoran untuk keperluan statistik/dashboard.
 	 *
 	 * @param array<int> $kelas_ids
+	 * @param string|null $status
+	 * @param string|null $nisn
 	 * @return int
 	 */
-	public function count_setoran(array $kelas_ids = array())
+	public function count_setoran(array $kelas_ids = array(), $status = null, $nisn = null)
 	{
 		if (! empty($kelas_ids)) {
 			$this->db->where_in('kelas_id', $kelas_ids);
 		}
+		if (! empty($status)) {
+			$this->db->where('status', $status);
+		}
+		if (! empty($nisn)) {
+			$this->db->where('nisn', $nisn);
+		}
 		return $this->db->count_all_results($this->table);
 	}
+
+	/**
+	 * Hitung total setoran bulan ini
+	 *
+	 * @param array<int> $kelas_ids
+	 * @param string|null $nisn
+	 * @return int
+	 */
+	public function count_setoran_bulan_ini(array $kelas_ids = array(), $nisn = null)
+	{
+		$awal_bulan = date('Y-m-01');
+		$akhir_bulan = date('Y-m-t');
+
+		$this->db->where('tanggal >=', $awal_bulan)
+			->where('tanggal <=', $akhir_bulan);
+
+		if (! empty($kelas_ids)) {
+			$this->db->where_in('kelas_id', $kelas_ids);
+		}
+		if (! empty($nisn)) {
+			$this->db->where('nisn', $nisn);
+		}
+		return $this->db->count_all_results($this->table);
+	}
+
+	/**
+	 * Ambil daftar juz unik yang sudah disetorkan (dan statusnya Lancar/Cukup) per santri
+	 *
+	 * @param string $nisn
+	 * @return array
+	 */
+	public function get_progress_juz_by_nisn($nisn)
+	{
+		return $this->db->select('juz, COUNT(id) as total_setoran, MAX(tanggal) as tanggal_terakhir')
+			->from($this->table)
+			->where('nisn', $nisn)
+			->where_in('status', array('Lancar', 'Cukup'))
+			->group_by('juz')
+			->order_by('juz', 'ASC')
+			->get()
+			->result();
+	}
+
+	/**
+	 * Ambil rekap laporan setoran berdasarkan filter
+	 *
+	 * @param array $filter
+	 * @return array
+	 */
+	public function get_laporan_rekap(array $filter = array())
+	{
+		$this->db->select('
+			setoran.nisn,
+			siswa.nama as nama_siswa,
+			kelas.nama_kelas,
+			COUNT(setoran.id) as total_setoran,
+			SUM(setoran.poin) as total_poin_periode,
+			SUM(CASE WHEN setoran.status = "Lancar" THEN 1 ELSE 0 END) as total_lancar,
+			SUM(CASE WHEN setoran.status = "Cukup" THEN 1 ELSE 0 END) as total_cukup,
+			SUM(CASE WHEN setoran.status = "Perlu Perbaikan" THEN 1 ELSE 0 END) as total_perbaikan,
+			MAX(setoran.tanggal) as setoran_terakhir
+		')
+		->from($this->table)
+		->join('siswa', 'siswa.nisn = setoran.nisn', 'left')
+		->join('kelas', 'kelas.id = setoran.kelas_id', 'left')
+		->group_by('setoran.nisn, siswa.nama, kelas.nama_kelas')
+		->order_by('total_poin_periode', 'DESC');
+
+		if (! empty($filter['kelas_id'])) {
+			$this->db->where('setoran.kelas_id', $filter['kelas_id']);
+		} elseif (! empty($filter['kelas_ids'])) {
+			$this->db->where_in('setoran.kelas_id', $filter['kelas_ids']);
+		}
+
+		if (! empty($filter['tanggal_awal'])) {
+			$this->db->where('setoran.tanggal >=', $filter['tanggal_awal']);
+		}
+
+		if (! empty($filter['tanggal_akhir'])) {
+			$this->db->where('setoran.tanggal <=', $filter['tanggal_akhir']);
+		}
+
+		return $this->db->get()->result();
+	}
 }
+

@@ -83,4 +83,64 @@ class Siswa_model extends CI_Model
 	{
 		return $this->db->update($this->table, array('user_id' => $user_id), array('nisn' => $nisn));
 	}
+
+	/**
+	 * Ambil data siswa berdasarkan user_id (akun login).
+	 *
+	 * @param int $user_id
+	 * @return object|null
+	 */
+	public function get_by_user_id($user_id)
+	{
+		return $this->db->select('siswa.*, kelas.nama_kelas')
+			->from($this->table)
+			->join('kelas', 'kelas.id = siswa.kelas_id', 'left')
+			->where('siswa.user_id', $user_id)
+			->get()
+			->row();
+	}
+
+	/**
+	 * Hitung total siswa (opsional difilter per kelas_ids).
+	 *
+	 * @param array<int> $kelas_ids
+	 * @return int
+	 */
+	public function count_siswa(array $kelas_ids = array())
+	{
+		if (! empty($kelas_ids)) {
+			$this->db->where_in('kelas_id', $kelas_ids);
+		}
+		return $this->db->count_all_results($this->table);
+	}
+
+	/**
+	 * Ambil data peringkat / leaderboard santri (global atau per kelas)
+	 *
+	 * @param int|null $kelas_id
+	 * @param int|null $limit
+	 * @param array<int> $kelas_ids
+	 * @return array
+	 */
+	public function get_leaderboard($kelas_id = null, $limit = null, array $kelas_ids = array())
+	{
+		$this->db->select('siswa.*, kelas.nama_kelas')
+			->from($this->table)
+			->join('kelas', 'kelas.id = siswa.kelas_id', 'left')
+			->order_by('siswa.total_poin', 'DESC')
+			->order_by('siswa.nama', 'ASC');
+
+		if (! empty($kelas_id)) {
+			$this->db->where('siswa.kelas_id', $kelas_id);
+		} elseif (! empty($kelas_ids)) {
+			$this->db->where_in('siswa.kelas_id', $kelas_ids);
+		}
+
+		if ($limit !== null) {
+			$this->db->limit($limit);
+		}
+
+		return $this->db->get()->result();
+	}
 }
+
