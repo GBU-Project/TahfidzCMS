@@ -87,8 +87,8 @@
 						<td class="px-4 py-3.5">
 							<?php if (! empty($s->audio_bukti)): ?>
 								<div class="flex flex-col gap-1">
-									<audio controls class="h-8 w-48">
-										<source src="<?php echo base_url($s->audio_bukti); ?>" type="audio/mpeg">
+									<audio controls preload="none" class="h-8 w-48">
+										<source src="<?php echo base_url($s->audio_bukti); ?>">
 										Browser tidak mendukung player audio.
 									</audio>
 									<?php if ($s->durasi_audio): ?>

@@ -187,8 +187,8 @@
 		</div>
 
 		<div class="flex gap-4 pt-2">
-			<button type="submit" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-3 rounded-xl shadow transition-all">
-				<i class="fa-solid fa-check mr-1"></i> Simpan Data Setoran
+			<button type="submit" id="btn-submit-setoran" class="flex-1 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-semibold py-3 rounded-xl shadow transition-all flex items-center justify-center gap-2">
+				<i class="fa-solid fa-check"></i> <span id="btn-submit-text">Simpan Data Setoran</span>
 			</button>
 			<a href="<?php echo site_url('setoran'); ?>" class="px-6 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 font-medium">
 				Batal
@@ -198,6 +198,26 @@
 </div>
 
 <script>
+// Validasi client-side & Loading State Form Setoran
+document.getElementById('form-setoran').addEventListener('submit', function(e) {
+	const inputFile = document.getElementById('input-audio-file');
+	if (inputFile && inputFile.files && inputFile.files[0]) {
+		const fileSizeMB = inputFile.files[0].size / (1024 * 1024);
+		if (fileSizeMB > 10) {
+			e.preventDefault();
+			alert('Ukuran file audio terlalu besar (' + fileSizeMB.toFixed(1) + ' MB). Maksimal ukuran file adalah 10 MB.');
+			return false;
+		}
+	}
+
+	// Disable double submit
+	const btnSubmit = document.getElementById('btn-submit-setoran');
+	const btnText = document.getElementById('btn-submit-text');
+	btnSubmit.disabled = true;
+	btnText.innerText = 'Menyimpan Data & Audio...';
+	btnSubmit.querySelector('i').className = 'fa-solid fa-spinner fa-spin';
+});
+
 // Kalkulasi estimasi poin secara real-time di UI
 function updateEstimatedPoin() {
 	const nilai = document.getElementById('select-nilai').value;
@@ -255,14 +275,6 @@ async function startRecording() {
 		};
 
 		mediaRecorder.onstop = () => {
-			// CATATAN PENTING: browser (Chrome/Firefox) merekam via MediaRecorder
-			// dalam format WebM (codec Opus) secara default — BUKAN mp3 asli.
-			// Sebelumnya kode ini memberi label palsu "audio/mp3" & ekstensi
-			// ".mp3" pada data WebM, yang membuat validasi MIME di server
-			// (CI3 Upload library mencocokkan ekstensi vs MIME asli file)
-			// menolak upload di kebanyakan browser. Sekarang label dibuat jujur
-			// sesuai isi sebenarnya (audio/webm), dan server (Upload_handler)
-			// sudah disesuaikan untuk menerima ekstensi .webm.
 			const mimeType = mediaRecorder.mimeType || 'audio/webm';
 			const audioBlob = new Blob(audioChunks, { type: mimeType });
 			const audioUrl = URL.createObjectURL(audioBlob);
@@ -270,7 +282,7 @@ async function startRecording() {
 			preview.src = audioUrl;
 			document.getElementById('audio-preview-container').classList.remove('hidden');
 
-			// Tentukan ekstensi file dari mimeType asli, bukan diklaim sepihak
+			// Tentukan ekstensi file dari mimeType asli
 			const ext = mimeType.includes('mp4') ? 'mp4' : (mimeType.includes('ogg') ? 'ogg' : 'webm');
 
 			// Buat file objek dan masukkan ke input file form

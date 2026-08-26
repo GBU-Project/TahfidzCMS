@@ -1,73 +1,121 @@
-<?php $role = $current_user->role; ?>
-<aside class="w-64 bg-emerald-900 text-white flex-shrink-0 min-h-screen p-4">
-	<div class="text-xl font-bold mb-6">TahfidzCMS</div>
+<?php 
+	$role = $current_user->role; 
+	$current_segment = $this->uri->segment(1) ?: 'dashboard';
+?>
 
-	<nav class="space-y-1 text-sm">
-		<a href="<?php echo site_url('dashboard'); ?>" class="block px-3 py-2 rounded-lg hover:bg-emerald-800">
-			<i class="fa-solid fa-house mr-2"></i> Dashboard
-		</a>
+<!-- Backdrop Mobile Overlay -->
+<div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 md:hidden hidden transition-opacity"></div>
 
-		<?php if (in_array($role, array('admin', 'guru'), TRUE)): ?>
-			<a href="<?php echo site_url('setoran'); ?>" class="block px-3 py-2 rounded-lg hover:bg-emerald-800">
-				<i class="fa-solid fa-pen mr-2"></i> Input Setoran
+<!-- Sidebar Aside -->
+<aside id="main-sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-64 bg-emerald-900 text-white flex-shrink-0 min-h-screen p-4 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col justify-between">
+	<div>
+		<div class="flex items-center justify-between mb-6 px-2">
+			<div class="flex items-center gap-2">
+				<span class="text-2xl">📖</span>
+				<div class="text-xl font-bold tracking-tight">TahfidzCMS</div>
+			</div>
+			<button type="button" onclick="toggleSidebar()" class="md:hidden text-emerald-300 hover:text-white p-1">
+				<i class="fa-solid fa-xmark text-lg"></i>
+			</button>
+		</div>
+
+		<nav class="space-y-1 text-sm font-medium">
+			<a href="<?php echo site_url('dashboard'); ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition <?php echo ($current_segment === 'dashboard') ? 'bg-emerald-800 text-white shadow-sm font-semibold' : 'text-emerald-100 hover:bg-emerald-800/60 hover:text-white'; ?>">
+				<i class="fa-solid fa-house w-5 text-center"></i> Dashboard
 			</a>
-			<a href="<?php echo site_url('penilaian'); ?>" class="block px-3 py-2 rounded-lg hover:bg-emerald-800">
-				<i class="fa-solid fa-clipboard-check mr-2"></i> Penilaian
+
+			<?php if (in_array($role, array('admin', 'guru'), TRUE)): ?>
+				<a href="<?php echo site_url('setoran'); ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition <?php echo ($current_segment === 'setoran') ? 'bg-emerald-800 text-white shadow-sm font-semibold' : 'text-emerald-100 hover:bg-emerald-800/60 hover:text-white'; ?>">
+					<i class="fa-solid fa-pen w-5 text-center"></i> Input Setoran
+				</a>
+				<a href="<?php echo site_url('penilaian'); ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition <?php echo ($current_segment === 'penilaian') ? 'bg-emerald-800 text-white shadow-sm font-semibold' : 'text-emerald-100 hover:bg-emerald-800/60 hover:text-white'; ?>">
+					<i class="fa-solid fa-clipboard-check w-5 text-center"></i> Penilaian
+				</a>
+			<?php endif; ?>
+
+			<a href="<?php echo site_url('riwayat'); ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition <?php echo ($current_segment === 'riwayat') ? 'bg-emerald-800 text-white shadow-sm font-semibold' : 'text-emerald-100 hover:bg-emerald-800/60 hover:text-white'; ?>">
+				<i class="fa-solid fa-clock-rotate-left w-5 text-center"></i> Riwayat
 			</a>
-		<?php endif; ?>
-
-		<a href="<?php echo site_url('riwayat'); ?>" class="block px-3 py-2 rounded-lg hover:bg-emerald-800">
-			<i class="fa-solid fa-clock-rotate-left mr-2"></i> Riwayat
-		</a>
-		<a href="<?php echo site_url('progress'); ?>" class="block px-3 py-2 rounded-lg hover:bg-emerald-800">
-			<i class="fa-solid fa-chart-line mr-2"></i> Progress
-		</a>
-		<a href="<?php echo site_url('leaderboard'); ?>" class="block px-3 py-2 rounded-lg hover:bg-emerald-800">
-			<i class="fa-solid fa-trophy mr-2"></i> Leaderboard
-		</a>
-
-		<?php if (in_array($role, array('admin', 'guru'), TRUE)): ?>
-			<a href="<?php echo site_url('laporan'); ?>" class="block px-3 py-2 rounded-lg hover:bg-emerald-800">
-				<i class="fa-solid fa-file-excel mr-2"></i> Laporan
+			<a href="<?php echo site_url('progress'); ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition <?php echo ($current_segment === 'progress') ? 'bg-emerald-800 text-white shadow-sm font-semibold' : 'text-emerald-100 hover:bg-emerald-800/60 hover:text-white'; ?>">
+				<i class="fa-solid fa-chart-line w-5 text-center"></i> Progress
 			</a>
-		<?php endif; ?>
-
-		<?php if ($role === 'admin'): ?>
-			<a href="<?php echo site_url('users'); ?>" class="block px-3 py-2 rounded-lg hover:bg-emerald-800">
-				<i class="fa-solid fa-users-gear mr-2"></i> Kelola Users
+			<a href="<?php echo site_url('leaderboard'); ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition <?php echo ($current_segment === 'leaderboard') ? 'bg-emerald-800 text-white shadow-sm font-semibold' : 'text-emerald-100 hover:bg-emerald-800/60 hover:text-white'; ?>">
+				<i class="fa-solid fa-trophy w-5 text-center"></i> Leaderboard
 			</a>
-			<a href="<?php echo site_url('kelas'); ?>" class="block px-3 py-2 rounded-lg hover:bg-emerald-800">
-				<i class="fa-solid fa-school mr-2"></i> Kelola Kelas
+
+			<?php if (in_array($role, array('admin', 'guru'), TRUE)): ?>
+				<a href="<?php echo site_url('laporan'); ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition <?php echo ($current_segment === 'laporan') ? 'bg-emerald-800 text-white shadow-sm font-semibold' : 'text-emerald-100 hover:bg-emerald-800/60 hover:text-white'; ?>">
+					<i class="fa-solid fa-file-excel w-5 text-center"></i> Laporan
+				</a>
+			<?php endif; ?>
+
+			<?php if ($role === 'admin'): ?>
+				<div class="pt-2 pb-1 px-3 text-[11px] font-bold tracking-wider uppercase text-emerald-400">Master Data</div>
+				<a href="<?php echo site_url('users'); ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition <?php echo ($current_segment === 'users') ? 'bg-emerald-800 text-white shadow-sm font-semibold' : 'text-emerald-100 hover:bg-emerald-800/60 hover:text-white'; ?>">
+					<i class="fa-solid fa-users-gear w-5 text-center"></i> Kelola Users
+				</a>
+				<a href="<?php echo site_url('kelas'); ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition <?php echo ($current_segment === 'kelas') ? 'bg-emerald-800 text-white shadow-sm font-semibold' : 'text-emerald-100 hover:bg-emerald-800/60 hover:text-white'; ?>">
+					<i class="fa-solid fa-school w-5 text-center"></i> Kelola Kelas
+				</a>
+			<?php endif; ?>
+
+			<div class="pt-2 pb-1 px-3 text-[11px] font-bold tracking-wider uppercase text-emerald-400">Pengaturan</div>
+			<a href="<?php echo site_url('profile'); ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition <?php echo ($current_segment === 'profile') ? 'bg-emerald-800 text-white shadow-sm font-semibold' : 'text-emerald-100 hover:bg-emerald-800/60 hover:text-white'; ?>">
+				<i class="fa-solid fa-user w-5 text-center"></i> Profil Saya
 			</a>
-		<?php endif; ?>
+		</nav>
+	</div>
 
-		<a href="<?php echo site_url('profile'); ?>" class="block px-3 py-2 rounded-lg hover:bg-emerald-800">
-			<i class="fa-solid fa-user mr-2"></i> Profil
+	<div class="pt-4 border-t border-emerald-800">
+		<a href="<?php echo site_url('logout'); ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition hover:bg-red-900/50 text-red-300 hover:text-red-200">
+			<i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Keluar
 		</a>
-
-		<hr class="border-emerald-800 my-3">
-
-		<a href="<?php echo site_url('logout'); ?>" class="block px-3 py-2 rounded-lg hover:bg-emerald-800 text-red-300">
-			<i class="fa-solid fa-right-from-bracket mr-2"></i> Keluar
-		</a>
-	</nav>
+	</div>
 </aside>
 
-<main class="flex-1">
-	<header class="bg-white border-b px-6 py-3 flex justify-between items-center">
-		<div class="text-sm text-gray-500">
-			Selamat datang, <span class="font-semibold text-gray-800"><?php echo htmlspecialchars($current_user->nama); ?></span>
-			<span class="ml-2 inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs capitalize"><?php echo $role; ?></span>
+<main class="flex-1 flex flex-col min-w-0">
+	<header class="bg-white border-b px-4 sm:px-6 py-3 flex justify-between items-center sticky top-0 z-30 shadow-sm">
+		<div class="flex items-center gap-3">
+			<button type="button" onclick="toggleSidebar()" class="md:hidden text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100">
+				<i class="fa-solid fa-bars text-lg"></i>
+			</button>
+			<div class="text-sm text-gray-500">
+				Halo, <span class="font-semibold text-gray-800"><?php echo htmlspecialchars($current_user->nama); ?></span>
+				<span class="ml-2 inline-block px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold capitalize border border-emerald-200"><?php echo $role; ?></span>
+			</div>
+		</div>
+		<div class="flex items-center gap-2">
+			<a href="<?php echo site_url('profile'); ?>" class="text-gray-400 hover:text-emerald-700 p-1.5 rounded-lg hover:bg-gray-50" title="Profil">
+				<i class="fa-solid fa-circle-user text-xl"></i>
+			</a>
 		</div>
 	</header>
-	<div class="p-6">
+	<div class="p-4 sm:p-6 max-w-7xl w-full">
 		<?php if ($this->session->flashdata('success')): ?>
-			<div class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg px-4 py-3">
-				<i class="fa-solid fa-circle-check mr-1"></i> <?php echo $this->session->flashdata('success'); ?>
+			<div class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-3 flex items-center gap-2">
+				<i class="fa-solid fa-circle-check text-base"></i>
+				<div><?php echo $this->session->flashdata('success'); ?></div>
 			</div>
 		<?php endif; ?>
 		<?php if ($this->session->flashdata('error')): ?>
-			<div class="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
-				<i class="fa-solid fa-circle-exclamation mr-1"></i> <?php echo $this->session->flashdata('error'); ?>
+			<div class="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 flex items-center gap-2">
+				<i class="fa-solid fa-circle-exclamation text-base"></i>
+				<div><?php echo $this->session->flashdata('error'); ?></div>
 			</div>
 		<?php endif; ?>
+
+<script>
+function toggleSidebar() {
+	const sidebar = document.getElementById('main-sidebar');
+	const backdrop = document.getElementById('sidebar-backdrop');
+	const isClosed = sidebar.classList.contains('-translate-x-full');
+
+	if (isClosed) {
+		sidebar.classList.remove('-translate-x-full');
+		backdrop.classList.remove('hidden');
+	} else {
+		sidebar.classList.add('-translate-x-full');
+		backdrop.classList.add('hidden');
+	}
+}
+</script>

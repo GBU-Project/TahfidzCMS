@@ -136,7 +136,7 @@
 							<td class="px-5 py-4 whitespace-nowrap">
 								<?php if (! empty($row->audio_bukti)): ?>
 									<audio controls preload="none" class="h-8 max-w-[200px]">
-										<source src="<?php echo base_url($row->audio_bukti); ?>" type="audio/mpeg">
+										<source src="<?php echo base_url($row->audio_bukti); ?>">
 										Browser Anda tidak mendukung pemutar audio.
 									</audio>
 									<?php if (! empty($row->durasi_audio)): ?>
