@@ -33,6 +33,7 @@ class MY_Controller extends CI_Controller
 	{
 		parent::__construct();
 
+		$this->load->database();
 		$this->load->model('User_model');
 		$this->load->model('Guru_kelas_model');
 

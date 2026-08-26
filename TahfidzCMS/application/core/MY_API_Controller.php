@@ -26,6 +26,7 @@ class MY_API_Controller extends CI_Controller
 		parent::__construct();
 
 		// Tidak load 'session' di sini — API murni stateless via token.
+		$this->load->database();
 		$this->load->model('User_model');
 		$this->load->model('Api_token_model');
 		$this->load->model('Guru_kelas_model');

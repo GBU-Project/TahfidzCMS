@@ -11,7 +11,24 @@ class Auth extends CI_Controller
 	public function __construct()
 	{
 		parent::__construct();
+
+		// Jika aplikasi belum diinstall (installed.lock belum ada),
+		// arahkan pengunjung root/login otomatis ke installer
+		if (! file_exists(FCPATH . 'installed.lock') && ! file_exists(APPPATH . 'config/installed.lock')) {
+			redirect('installer');
+			exit();
+		}
+
+		$this->load->database();
 		$this->load->model('User_model');
+	}
+
+	/**
+	 * GET / -> Default route handler
+	 */
+	public function index()
+	{
+		$this->login();
 	}
 
 	/**

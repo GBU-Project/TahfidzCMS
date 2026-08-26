@@ -12,8 +12,10 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 $autoload['packages'] = array();
 
-// Library yang dipakai di hampir semua controller
-$autoload['libraries'] = array('database', 'session', 'form_validation');
+// Library yang dipakai secara global (session & form_validation).
+// Catatan: 'database' di-load oleh MY_Controller / MY_API_Controller / model masing-masing,
+// atau otomatis saat installer selesai mengonfigurasi database.
+$autoload['libraries'] = array('session', 'form_validation');
 
 $autoload['drivers'] = array();
 
