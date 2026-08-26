@@ -255,14 +255,26 @@ async function startRecording() {
 		};
 
 		mediaRecorder.onstop = () => {
-			const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+			// CATATAN PENTING: browser (Chrome/Firefox) merekam via MediaRecorder
+			// dalam format WebM (codec Opus) secara default — BUKAN mp3 asli.
+			// Sebelumnya kode ini memberi label palsu "audio/mp3" & ekstensi
+			// ".mp3" pada data WebM, yang membuat validasi MIME di server
+			// (CI3 Upload library mencocokkan ekstensi vs MIME asli file)
+			// menolak upload di kebanyakan browser. Sekarang label dibuat jujur
+			// sesuai isi sebenarnya (audio/webm), dan server (Upload_handler)
+			// sudah disesuaikan untuk menerima ekstensi .webm.
+			const mimeType = mediaRecorder.mimeType || 'audio/webm';
+			const audioBlob = new Blob(audioChunks, { type: mimeType });
 			const audioUrl = URL.createObjectURL(audioBlob);
 			const preview = document.getElementById('audio-preview');
 			preview.src = audioUrl;
 			document.getElementById('audio-preview-container').classList.remove('hidden');
 
+			// Tentukan ekstensi file dari mimeType asli, bukan diklaim sepihak
+			const ext = mimeType.includes('mp4') ? 'mp4' : (mimeType.includes('ogg') ? 'ogg' : 'webm');
+
 			// Buat file objek dan masukkan ke input file form
-			const file = new File([audioBlob], "rekaman_setoran_" + Date.now() + ".mp3", { type: "audio/mp3" });
+			const file = new File([audioBlob], "rekaman_setoran_" + Date.now() + "." + ext, { type: mimeType });
 			const container = new DataTransfer();
 			container.items.add(file);
 			document.getElementById('input-audio-file').files = container.files;

@@ -15,6 +15,9 @@ class MY_API_Controller extends CI_Controller
 	/** @var object|null Data user yang terautentikasi via token */
 	protected $user;
 
+	/** @var string|null Role user ('admin'|'guru'|'siswa'), disalin dari $this->user->role */
+	protected $role;
+
 	/** @var array Daftar kelas_id yang boleh diakses (khusus role guru) */
 	protected $kelas_diizinkan = array();
 
@@ -58,6 +61,8 @@ class MY_API_Controller extends CI_Controller
 			$this->json_error('Akun tidak aktif.', 401);
 			return;
 		}
+
+		$this->role = $this->user->role;
 	}
 
 	private function _load_kelas_diizinkan()

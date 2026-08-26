@@ -138,17 +138,28 @@ banyak fungsi) cukup ditulis SEKALI di sini.
 - [x] Controller `Penilaian` (edit/koreksi nilai setoran, termasuk memutar ulang audio bukti saat menilai)
 - [x] Controller API `api/Setoran` (GET list & POST simpan setoran + upload audio)
 
-**Fase 4 — Laporan & Insight**
-- [ ] Controller `Dashboard` (statistik ringkas per role)
-- [ ] Controller `Riwayat` (list + filter)
-- [ ] Controller `Progress` (juz tercapai vs target)
-- [ ] Controller `Leaderboard` (query RANK() / sort manual)
-- [ ] Controller `Laporan` (export Excel pakai PHPSpreadsheet)
+**Fase 4 — Laporan & Insight** ✅ *(web selesai, API menyusul di sesi ini)*
+- [x] Controller `Dashboard` (statistik ringkas per role)
+- [x] Controller `Riwayat` (list + filter)
+- [x] Controller `Progress` (juz tercapai vs target)
+- [x] Controller `Leaderboard` (sort `ORDER BY total_poin DESC`, siap upgrade ke `RANK()` bila perlu ranking eksplisit)
+- [x] Controller `Laporan` (export CSV UTF-8 — deviasi dari rencana PHPSpreadsheet/xlsx asli, tapi tetap bisa dibuka Excel)
+- [x] Controller API `api/Dashboard`, `api/Riwayat`, `api/Progress`, `api/Leaderboard` (mengikuti logika & guard yang sama persis dengan versi web)
 
 **Fase 5 — Profil & Pemolesan**
-- [ ] Controller `Profile` (edit profil, ganti password)
-- [ ] Validasi form menyeluruh (`form_validation` library)
-- [ ] Testing role-based access (guru tidak bisa akses kelas lain, siswa tidak bisa akses data siswa lain)
+- [x] Controller `Profile` (edit profil, ganti password, upload foto)
+- [x] Validasi form menyeluruh (`form_validation` library) — sudah diterapkan di Setoran/Penilaian/Users/Profile
+- [ ] Testing role-based access menyeluruh (guru tidak bisa akses kelas lain, siswa tidak bisa akses data siswa lain) — **lihat catatan bug di bawah, sebagian celah sudah ditemukan & diperbaiki**
+
+---
+
+## 5a. Catatan Perbaikan (Code Review — lihat riwayat chat)
+
+Saat review kode di branch `develop`, ditemukan dan diperbaiki:
+
+1. **[KRITIS] Kebocoran data antar role** — `Dashboard.php`, `Riwayat.php`, `Progress.php`, `Leaderboard.php` memakai `$this->role` yang sebelumnya tidak pernah didefinisikan di `MY_Controller`/`MY_API_Controller`, sehingga selalu `null` dan membuat akun **siswa** salah masuk ke cabang logika admin/guru (berpotensi melihat data siswa lain & riwayat sekolah secara penuh). **Fix**: properti `$role` kini diisi otomatis di kedua base controller saat sesi/token divalidasi.
+2. **[FUNGSIONAL] Upload rekaman audio gagal di Chrome/Firefox** — JS `MediaRecorder` menghasilkan `audio/webm`, tapi kode lama melabelinya sebagai `.mp3` palsu, kemungkinan besar ditolak validasi MIME CI3. **Fix**: JS kini jujur pakai `mediaRecorder.mimeType` asli, dan `Upload_handler` menerima ekstensi `webm`. **Perlu dicek manual**: `application/config/mimes.php` di instalasi CI3 harus memetakan ekstensi `webm` ke MIME audio, bukan cuma video.
+3. **[MINOR]** `Setoran_model::generate_kode_setoran()` berpotensi race condition kalau 2 guru submit persis bersamaan (duplikat kode ditolak UNIQUE constraint) — risiko rendah untuk skala sekolah, belum diperbaiki.
 
 ---
 

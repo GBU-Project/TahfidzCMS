@@ -14,7 +14,10 @@ class Upload_handler
 	const FOTO_ALLOWED_TYPES = 'jpg|jpeg|png';
 
 	const AUDIO_MAX_SIZE_KB = 10240; // 10MB
-	const AUDIO_ALLOWED_TYPES = 'mp3|wav|m4a|ogg';
+	// 'webm' WAJIB ada di sini: browser (Chrome/Firefox) merekam via
+	// MediaRecorder API secara default menghasilkan audio/webm (codec Opus),
+	// bukan mp3 asli — lihat catatan di views/setoran/form.php.
+	const AUDIO_ALLOWED_TYPES = 'mp3|wav|m4a|ogg|webm';
 
 	public function __construct()
 	{

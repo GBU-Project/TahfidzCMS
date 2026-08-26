@@ -19,6 +19,13 @@ class MY_Controller extends CI_Controller
 	/** @var object|null Data user yang sedang login (dari session) */
 	protected $user;
 
+	/**
+	 * @var string|null Role user yang sedang login ('admin'|'guru'|'siswa'),
+	 * disalin dari $this->user->role supaya controller turunan bisa pakai
+	 * $this->role langsung tanpa null-check ke $this->user setiap saat.
+	 */
+	protected $role;
+
 	/** @var array Daftar kelas_id yang boleh diakses (kosong = semua, untuk admin) */
 	protected $kelas_diizinkan = array();
 
@@ -51,7 +58,10 @@ class MY_Controller extends CI_Controller
 		if (! $this->user || (int) $this->user->is_active !== 1) {
 			$this->session->sess_destroy();
 			redirect('login');
+			return;
 		}
+
+		$this->role = $this->user->role;
 	}
 
 	/**
