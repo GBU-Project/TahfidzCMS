@@ -128,4 +128,15 @@
 			</tbody>
 		</table>
 	</div>
+
+	<?php if (! empty($pagination)): ?>
+		<div class="px-5 py-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-3">
+			<div class="text-xs text-gray-500">
+				Menampilkan total <strong class="text-gray-800"><?php echo $total_rows; ?></strong> data setoran
+			</div>
+			<div>
+				<?php echo $pagination; ?>
+			</div>
+		</div>
+	<?php endif; ?>
 </div>

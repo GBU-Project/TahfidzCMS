@@ -41,13 +41,52 @@ class Setoran extends MY_Controller
 			'search'    => $search,
 		);
 
+		// Konfigurasi Pagination
+		$this->load->library('pagination');
+		$total_rows = $this->Setoran_model->count_all_filtered($filter);
+		$per_page   = 15;
+		$page       = (int) $this->input->get('page');
+		$offset     = ($page > 1) ? ($page - 1) * $per_page : 0;
+
+		$get_params = $this->input->get();
+		unset($get_params['page']);
+		$query_string = ! empty($get_params) ? '?' . http_build_query($get_params) : '';
+
+		$config['base_url']             = site_url('setoran') . $query_string;
+		$config['total_rows']           = $total_rows;
+		$config['per_page']             = $per_page;
+		$config['page_query_string']    = TRUE;
+		$config['query_string_segment'] = 'page';
+		$config['use_page_numbers']     = TRUE;
+		$config['reuse_query_string']   = TRUE;
+
+		// Styling Tailwind
+		$config['full_tag_open']   = '<nav class="flex items-center gap-1 text-sm font-medium">';
+		$config['full_tag_close']  = '</nav>';
+		$config['cur_tag_open']    = '<span class="px-3 py-1.5 rounded-lg bg-emerald-700 text-white font-bold">';
+		$config['cur_tag_close']   = '</span>';
+		$config['num_tag_open']    = '<span class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">';
+		$config['num_tag_close']   = '</span>';
+		$config['prev_tag_open']   = '<span class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">';
+		$config['prev_tag_close']  = '</span>';
+		$config['next_tag_open']   = '<span class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">';
+		$config['next_tag_close']  = '</span>';
+		$config['first_tag_open']  = '<span class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">';
+		$config['first_tag_close'] = '</span>';
+		$config['last_tag_open']   = '<span class="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">';
+		$config['last_tag_close']  = '</span>';
+
+		$this->pagination->initialize($config);
+
 		$data = array(
-			'title'         => 'Data Input Setoran',
-			'setoran_list'  => $this->Setoran_model->get_all($filter, 100),
-			'kelas_list'    => $this->is_guru() ? $this->Kelas_model->get_by_ids($this->kelas_diizinkan) : $this->Kelas_model->get_all(),
-			'selected_kelas'=> $kelas_id,
-			'selected_nisn' => $nisn,
-			'search'        => $search,
+			'title'          => 'Data Input Setoran',
+			'setoran_list'   => $this->Setoran_model->get_all($filter, $per_page, $offset),
+			'total_rows'     => $total_rows,
+			'pagination'     => $this->pagination->create_links(),
+			'kelas_list'     => $this->is_guru() ? $this->Kelas_model->get_by_ids($this->kelas_diizinkan) : $this->Kelas_model->get_all(),
+			'selected_kelas' => $kelas_id,
+			'selected_nisn'  => $nisn,
+			'search'         => $search,
 		);
 
 		$this->render('setoran/index', $data);

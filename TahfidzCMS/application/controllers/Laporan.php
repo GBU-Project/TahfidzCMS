@@ -56,7 +56,7 @@ class Laporan extends MY_Controller
 	}
 
 	/**
-	 * Export data setoran ke format Excel (CSV kompatibel UTF-8)
+	 * Export data setoran ke format spreadsheet Excel (.xls)
 	 */
 	public function export()
 	{
@@ -81,17 +81,9 @@ class Laporan extends MY_Controller
 		);
 
 		$setoran_list = $this->Setoran_model->get_all($filter);
+		$this->load->library('Excel_exporter');
 
-		$filename = 'Laporan_Tahfidz_' . date('Ymd_His') . '.csv';
-
-		header('Content-Type: text/csv; charset=utf-8');
-		header('Content-Disposition: attachment; filename="' . $filename . '"');
-
-		$output = fopen('php://output', 'w');
-		// Add BOM for Excel UTF-8 recognition
-		fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
-
-		fputcsv($output, array(
+		$headers = array(
 			'No',
 			'Kode Setoran',
 			'Tanggal',
@@ -108,15 +100,16 @@ class Laporan extends MY_Controller
 			'Poin Diperoleh',
 			'Guru Pengoreksi',
 			'Catatan'
-		));
+		);
 
+		$rows = array();
 		$no = 1;
 		foreach ($setoran_list as $row) {
-			fputcsv($output, array(
+			$rows[] = array(
 				$no++,
 				$row->kode_setoran,
 				$row->tanggal,
-				$row->waktu,
+				substr($row->waktu, 0, 5),
 				$row->nisn,
 				$row->nama_siswa,
 				$row->nama_kelas,
@@ -129,10 +122,10 @@ class Laporan extends MY_Controller
 				$row->poin,
 				$row->nama_guru ?: '-',
 				$row->catatan ?: '-'
-			));
+			);
 		}
 
-		fclose($output);
-		exit();
+		$filename = 'Laporan_Tahfidz_' . date('Ymd_His') . '.xls';
+		$this->excel_exporter->download_excel($filename, $headers, $rows, 'Rekap Setoran');
 	}
 }

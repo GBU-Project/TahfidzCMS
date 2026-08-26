@@ -217,4 +217,24 @@ class Users extends MY_Controller
 		$this->session->set_flashdata('success', 'User berhasil dihapus.');
 		redirect('users');
 	}
+
+	/**
+	 * GET /users/reset-password/(:num)
+	 * Reset kata sandi pengguna kembali ke default ('123456') oleh admin.
+	 */
+	public function reset_password($id)
+	{
+		$user = $this->User_model->get_by_id($id);
+
+		if (! $user) {
+			show_404();
+			return;
+		}
+
+		$default_password = '123456';
+		$this->User_model->update_password($id, $default_password);
+
+		$this->session->set_flashdata('success', "Password untuk akun " . htmlspecialchars($user->nama) . " (" . htmlspecialchars($user->username) . ") berhasil di-reset menjadi: {$default_password}");
+		redirect('users');
+	}
 }

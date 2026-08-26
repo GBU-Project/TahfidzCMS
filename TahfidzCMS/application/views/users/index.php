@@ -59,10 +59,15 @@
 						<?php endif; ?>
 					</td>
 					<td class="px-4 py-3 text-right space-x-2">
-						<a href="<?php echo site_url('users/form/' . $u->id); ?>" class="text-emerald-700 hover:underline">Edit</a>
+						<a href="<?php echo site_url('users/reset-password/' . $u->id); ?>"
+							onclick="return confirm('Reset password untuk <?php echo htmlspecialchars(addslashes($u->nama)); ?> menjadi default (123456)?');"
+							class="text-amber-600 hover:text-amber-700 font-medium hover:underline text-xs" title="Reset ke default: 123456">
+							<i class="fa-solid fa-key mr-0.5"></i> Reset Pass
+						</a>
+						<a href="<?php echo site_url('users/form/' . $u->id); ?>" class="text-emerald-700 font-medium hover:underline text-xs">Edit</a>
 						<a href="<?php echo site_url('users/hapus/' . $u->id); ?>"
 							onclick="return confirm('Yakin ingin menghapus <?php echo htmlspecialchars(addslashes($u->nama)); ?>?');"
-							class="text-red-500 hover:underline">Hapus</a>
+							class="text-red-500 font-medium hover:underline text-xs">Hapus</a>
 					</td>
 				</tr>
 			<?php endforeach; ?>

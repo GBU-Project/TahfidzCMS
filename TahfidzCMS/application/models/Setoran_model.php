@@ -102,6 +102,53 @@ class Setoran_model extends CI_Model
 	}
 
 	/**
+	 * Hitung total baris setoran yang cocok dengan filter untuk pagination.
+	 *
+	 * @param array $filter
+	 * @return int
+	 */
+	public function count_all_filtered(array $filter = array())
+	{
+		$this->db->from($this->table)
+			->join('siswa', 'siswa.nisn = setoran.nisn', 'left')
+			->join('kelas', 'kelas.id = setoran.kelas_id', 'left');
+
+		if (! empty($filter['nisn'])) {
+			$this->db->where('setoran.nisn', $filter['nisn']);
+		}
+
+		if (! empty($filter['kelas_id'])) {
+			$this->db->where('setoran.kelas_id', $filter['kelas_id']);
+		} elseif (! empty($filter['kelas_ids'])) {
+			$this->db->where_in('setoran.kelas_id', $filter['kelas_ids']);
+		}
+
+		if (! empty($filter['tanggal_awal'])) {
+			$this->db->where('setoran.tanggal >=', $filter['tanggal_awal']);
+		}
+
+		if (! empty($filter['tanggal_akhir'])) {
+			$this->db->where('setoran.tanggal <=', $filter['tanggal_akhir']);
+		}
+
+		if (! empty($filter['status'])) {
+			$this->db->where('setoran.status', $filter['status']);
+		}
+
+		if (! empty($filter['search'])) {
+			$search = $filter['search'];
+			$this->db->group_start()
+				->like('siswa.nama', $search)
+				->or_like('setoran.nisn', $search)
+				->or_like('setoran.surat', $search)
+				->or_like('setoran.kode_setoran', $search)
+				->group_end();
+		}
+
+		return $this->db->count_all_results();
+	}
+
+	/**
 	 * Ambil satu data setoran berdasarkan ID.
 	 *
 	 * @param int $id

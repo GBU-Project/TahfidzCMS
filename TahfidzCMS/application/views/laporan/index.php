@@ -6,7 +6,7 @@
 	<div class="flex items-center gap-3">
 		<a href="<?php echo site_url('laporan/export?' . http_build_query(array('kelas_id' => $selected_kelas, 'tanggal_awal' => $tanggal_awal, 'tanggal_akhir' => $tanggal_akhir))); ?>" 
 		   class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl transition shadow-sm">
-			<i class="fa-solid fa-file-excel"></i> Export ke Excel / CSV
+			<i class="fa-solid fa-file-excel"></i> Export ke Excel (.xls)
 		</a>
 	</div>
 </div>

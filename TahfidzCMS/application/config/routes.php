@@ -39,6 +39,7 @@ $route['users/form']        = 'users/form';
 $route['users/form/(:num)'] = 'users/form/$1';
 $route['users/simpan']      = 'users/simpan';
 $route['users/hapus/(:num)'] = 'users/hapus/$1';
+$route['users/reset-password/(:num)'] = 'users/reset_password/$1';
 
 $route['kelas']             = 'kelas/index';
 $route['kelas/simpan']      = 'kelas/simpan';
