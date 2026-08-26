@@ -1,0 +1,280 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+/**
+ * Setoran_model — Model transaksi inti data setoran hafalan siswa.
+ *
+ * Mengelola tabel `setoran` dan memastikan konsistensi `total_poin` serta `badge`
+ * di tabel `siswa` menggunakan database transaction dan query atomic.
+ */
+class Setoran_model extends CI_Model
+{
+	private $table = 'setoran';
+
+	public function __construct()
+	{
+		parent::__construct();
+		$this->load->library('Poin_calculator');
+	}
+
+	/**
+	 * Generate kode setoran baru secara berurutan (misal: STR-0001, STR-0002).
+	 *
+	 * @return string
+	 */
+	public function generate_kode_setoran()
+	{
+		$this->db->select('kode_setoran')
+			->from($this->table)
+			->order_by('id', 'DESC')
+			->limit(1);
+
+		$row = $this->db->get()->row();
+		if (! $row || empty($row->kode_setoran)) {
+			return 'STR-0001';
+		}
+
+		$parts = explode('-', $row->kode_setoran);
+		$next_num = isset($parts[1]) ? ((int) $parts[1] + 1) : 1;
+
+		return sprintf('STR-%04d', $next_num);
+	}
+
+	/**
+	 * Ambil semua data setoran dengan filter dan relasi join.
+	 *
+	 * @param array $filter [kelas_id, kelas_ids, nisn, tanggal_awal, tanggal_akhir, status, search]
+	 * @param int|null $limit
+	 * @param int|null $offset
+	 * @return array
+	 */
+	public function get_all(array $filter = array(), $limit = null, $offset = null)
+	{
+		$this->db->select('setoran.*, siswa.nama AS nama_siswa, kelas.nama_kelas, guru.nama AS nama_guru')
+			->from($this->table)
+			->join('siswa', 'siswa.nisn = setoran.nisn', 'left')
+			->join('kelas', 'kelas.id = setoran.kelas_id', 'left')
+			->join('users AS guru', 'guru.id = setoran.guru_pengoreksi_id', 'left')
+			->order_by('setoran.tanggal', 'DESC')
+			->order_by('setoran.waktu', 'DESC')
+			->order_by('setoran.id', 'DESC');
+
+		if (! empty($filter['nisn'])) {
+			$this->db->where('setoran.nisn', $filter['nisn']);
+		}
+
+		if (! empty($filter['kelas_id'])) {
+			$this->db->where('setoran.kelas_id', $filter['kelas_id']);
+		} elseif (! empty($filter['kelas_ids'])) {
+			$this->db->where_in('setoran.kelas_id', $filter['kelas_ids']);
+		}
+
+		if (! empty($filter['tanggal_awal'])) {
+			$this->db->where('setoran.tanggal >=', $filter['tanggal_awal']);
+		}
+
+		if (! empty($filter['tanggal_akhir'])) {
+			$this->db->where('setoran.tanggal <=', $filter['tanggal_akhir']);
+		}
+
+		if (! empty($filter['status'])) {
+			$this->db->where('setoran.status', $filter['status']);
+		}
+
+		if (! empty($filter['search'])) {
+			$search = $filter['search'];
+			$this->db->group_start()
+				->like('siswa.nama', $search)
+				->or_like('setoran.nisn', $search)
+				->or_like('setoran.surat', $search)
+				->or_like('setoran.kode_setoran', $search)
+				->group_end();
+		}
+
+		if ($limit !== null) {
+			$this->db->limit($limit, $offset);
+		}
+
+		return $this->db->get()->result();
+	}
+
+	/**
+	 * Ambil satu data setoran berdasarkan ID.
+	 *
+	 * @param int $id
+	 * @return object|null
+	 */
+	public function get_by_id($id)
+	{
+		return $this->db->select('setoran.*, siswa.nama AS nama_siswa, siswa.total_poin AS siswa_total_poin, siswa.badge AS siswa_badge, kelas.nama_kelas, guru.nama AS nama_guru')
+			->from($this->table)
+			->join('siswa', 'siswa.nisn = setoran.nisn', 'left')
+			->join('kelas', 'kelas.id = setoran.kelas_id', 'left')
+			->join('users AS guru', 'guru.id = setoran.guru_pengoreksi_id', 'left')
+			->where('setoran.id', $id)
+			->get()
+			->row();
+	}
+
+	/**
+	 * Tambah setoran baru dengan atomic database transaction.
+	 *
+	 * @param array $data Data kolom tabel `setoran`
+	 * @return int ID setoran yang baru dibuat
+	 * @throws Exception
+	 */
+	public function create(array $data)
+	{
+		if (empty($data['kode_setoran'])) {
+			$data['kode_setoran'] = $this->generate_kode_setoran();
+		}
+
+		// Hitung poin secara konsisten
+		$poin = $this->poin_calculator->hitung_poin($data['nilai'], $data['status']);
+		$data['poin'] = $poin;
+
+		$this->db->trans_begin();
+
+		// 1. Insert data setoran
+		$this->db->insert($this->table, $data);
+		$insert_id = $this->db->insert_id();
+
+		// 2. Atomic update total_poin siswa
+		$this->db->set('total_poin', 'total_poin + ' . (int) $poin, FALSE)
+			->where('nisn', $data['nisn'])
+			->update('siswa');
+
+		// 3. Ambil total poin terbaru untuk evaluasi badge
+		$siswa = $this->db->select('total_poin')->where('nisn', $data['nisn'])->get('siswa')->row();
+		if ($siswa) {
+			$new_badge = $this->poin_calculator->hitung_badge($siswa->total_poin);
+			$this->db->update('siswa', array('badge' => $new_badge), array('nisn' => $data['nisn']));
+		}
+
+		if ($this->db->trans_status() === FALSE) {
+			$this->db->trans_rollback();
+			throw new Exception('Gagal menyimpan transaksi setoran.');
+		}
+
+		$this->db->trans_commit();
+		return $insert_id;
+	}
+
+	/**
+	 * Update penilaian setoran (oleh guru/admin), menyesuaikan selisih poin siswa.
+	 *
+	 * @param int   $id
+	 * @param array $data Kolom yang diperbarui: nilai, status, catatan, guru_pengoreksi_id
+	 * @return bool
+	 * @throws Exception
+	 */
+	public function update_penilaian($id, array $data)
+	{
+		$setoran = $this->get_by_id($id);
+		if (! $setoran) {
+			throw new Exception('Data setoran tidak ditemukan.');
+		}
+
+		$poin_lama = (int) $setoran->poin;
+		$nilai_baru = isset($data['nilai']) ? $data['nilai'] : $setoran->nilai;
+		$status_baru = isset($data['status']) ? $data['status'] : $setoran->status;
+
+		$poin_baru = $this->poin_calculator->hitung_poin($nilai_baru, $status_baru);
+		$selisih = $poin_baru - $poin_lama;
+
+		$data['nilai']  = $nilai_baru;
+		$data['status'] = $status_baru;
+		$data['poin']   = $poin_baru;
+
+		$this->db->trans_begin();
+
+		// 1. Update baris setoran
+		$this->db->update($this->table, $data, array('id' => $id));
+
+		// 2. Sesuaikan total_poin siswa jika ada selisih
+		if ($selisih !== 0) {
+			$operator = $selisih > 0 ? '+' : '-';
+			$abs_selisih = abs($selisih);
+
+			$this->db->set('total_poin', "total_poin {$operator} {$abs_selisih}", FALSE)
+				->where('nisn', $setoran->nisn)
+				->update('siswa');
+		}
+
+		// 3. Update badge berdasarkan total poin terbaru
+		$siswa = $this->db->select('total_poin')->where('nisn', $setoran->nisn)->get('siswa')->row();
+		if ($siswa) {
+			$new_badge = $this->poin_calculator->hitung_badge($siswa->total_poin);
+			$this->db->update('siswa', array('badge' => $new_badge), array('nisn' => $setoran->nisn));
+		}
+
+		if ($this->db->trans_status() === FALSE) {
+			$this->db->trans_rollback();
+			throw new Exception('Gagal memperbarui penilaian setoran.');
+		}
+
+		$this->db->trans_commit();
+		return TRUE;
+	}
+
+	/**
+	 * Hapus data setoran dan kurangi total poin siswa terkait.
+	 *
+	 * @param int $id
+	 * @return bool
+	 * @throws Exception
+	 */
+	public function delete($id)
+	{
+		$setoran = $this->get_by_id($id);
+		if (! $setoran) {
+			throw new Exception('Data setoran tidak ditemukan.');
+		}
+
+		$this->db->trans_begin();
+
+		// 1. Hapus baris setoran
+		$this->db->delete($this->table, array('id' => $id));
+
+		// 2. Kurangi poin siswa
+		$this->db->set('total_poin', 'total_poin - ' . (int) $setoran->poin, FALSE)
+			->where('nisn', $setoran->nisn)
+			->update('siswa');
+
+		// 3. Hitung ulang badge
+		$siswa = $this->db->select('total_poin')->where('nisn', $setoran->nisn)->get('siswa')->row();
+		if ($siswa) {
+			$total = max(0, (int) $siswa->total_poin);
+			$new_badge = $this->poin_calculator->hitung_badge($total);
+			$this->db->update('siswa', array('total_poin' => $total, 'badge' => $new_badge), array('nisn' => $setoran->nisn));
+		}
+
+		if ($this->db->trans_status() === FALSE) {
+			$this->db->trans_rollback();
+			throw new Exception('Gagal menghapus setoran.');
+		}
+
+		$this->db->trans_commit();
+
+		// Hapus file audio fisik jika ada
+		if (! empty($setoran->audio_bukti) && file_exists('./' . $setoran->audio_bukti)) {
+			@unlink('./' . $setoran->audio_bukti);
+		}
+
+		return TRUE;
+	}
+
+	/**
+	 * Hitung total setoran untuk keperluan statistik/dashboard.
+	 *
+	 * @param array<int> $kelas_ids
+	 * @return int
+	 */
+	public function count_setoran(array $kelas_ids = array())
+	{
+		if (! empty($kelas_ids)) {
+			$this->db->where_in('kelas_id', $kelas_ids);
+		}
+		return $this->db->count_all_results($this->table);
+	}
+}

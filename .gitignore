@@ -1,0 +1,25 @@
+# Composer
+vendor/
+composer.lock
+
+# Environment / Credentials
+.env
+application/config/database.php.local
+
+# Uploads
+uploads/profile/*
+!uploads/profile/.gitkeep
+uploads/setoran_audio/*
+!uploads/setoran_audio/.gitkeep
+
+# Logs & Cache
+application/logs/log-*.php
+!application/logs/index.html
+application/cache/*
+!application/cache/index.html
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
