@@ -14,6 +14,7 @@ p { font-size: 14px; margin: 0; line-height: 1.5; color: #64748b; }
 	<div id="container">
 		<h1><?php echo $heading; ?></h1>
 		<p><?php echo $message; ?></p>
+		<p style="margin-top:16px;"><a href="/" style="color:#059669;text-decoration:none;font-weight:600;">&larr; Kembali ke Beranda</a></p>
 	</div>
 </body>
 </html>

@@ -63,6 +63,21 @@ CREATE TABLE `api_tokens` (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
+-- 2c. TABEL LOGIN_ATTEMPTS (rate limiting brute-force api/auth/login)
+-- Mencatat percobaan login GAGAL saja, per kombinasi username+IP.
+-- Dibersihkan otomatis via WHERE attempted_at, tidak perlu cron terpisah.
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `login_attempts`;
+CREATE TABLE `login_attempts` (
+  `id`           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `username`     VARCHAR(100) NOT NULL,
+  `ip_address`   VARCHAR(45)  NOT NULL COMMENT 'Mendukung IPv4 & IPv6',
+  `attempted_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_username_ip_time` (`username`, `ip_address`, `attempted_at`)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
 -- 2a. TABEL GURU_KELAS (relasi many-to-many guru <-> kelas)
 -- Di Apps Script ini disimpan sebagai string "7A,7B" di kolom 'kelas'.
 -- Dipecah jadi tabel relasi agar bisa di-query dengan JOIN, bukan parsing string.

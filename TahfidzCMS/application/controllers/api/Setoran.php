@@ -144,7 +144,8 @@ class Setoran extends MY_API_Controller
 
 			$this->json_success($created, 'Setoran berhasil disimpan.');
 		} catch (Exception $e) {
-			$this->json_error('Gagal menyimpan setoran: ' . $e->getMessage(), 500);
+			log_message('error', 'Gagal menyimpan setoran (api): ' . $e->getMessage());
+			$this->json_error('Gagal menyimpan setoran. Silakan coba lagi atau hubungi administrator.', 500);
 		}
 	}
 }

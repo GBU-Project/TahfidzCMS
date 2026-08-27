@@ -13,12 +13,17 @@ class Auth extends CI_Controller
 		parent::__construct();
 		$this->load->model('User_model');
 		$this->load->model('Api_token_model');
+		$this->load->model('Login_attempt_model');
 	}
 
 	/**
 	 * POST /api/auth/login
 	 * Body (form-urlencoded/json): username, password
 	 * Response sukses: { token, user: { id, nama, role, ... } }
+	 *
+	 * Dibatasi rate limit: maksimal Login_attempt_model::MAX_ATTEMPTS
+	 * percobaan gagal per username+IP dalam jendela Login_attempt_model::WINDOW_SECONDS,
+	 * untuk mencegah brute-force credential.
 	 */
 	public function login()
 	{
@@ -27,20 +32,29 @@ class Auth extends CI_Controller
 			return;
 		}
 
-		$username = trim((string) $this->input->post('username'));
-		$password = (string) $this->input->post('password');
+		$username   = trim((string) $this->input->post('username'));
+		$password   = (string) $this->input->post('password');
+		$ip_address = $this->input->ip_address();
 
 		if ($username === '' || $password === '') {
 			$this->_json_error('username dan password wajib diisi.', 422);
 			return;
 		}
 
+		if ($this->Login_attempt_model->is_locked($username, $ip_address)) {
+			$this->_json_error('Terlalu banyak percobaan login gagal. Silakan coba lagi dalam beberapa menit.', 429);
+			return;
+		}
+
 		$user = $this->User_model->verify_credentials($username, $password);
 
 		if (! $user) {
+			$this->Login_attempt_model->record_failed($username, $ip_address);
 			$this->_json_error('NIP/NISN atau password salah.', 401);
 			return;
 		}
+
+		$this->Login_attempt_model->clear($username, $ip_address);
 
 		$token = $this->Api_token_model->issue($user->id);
 

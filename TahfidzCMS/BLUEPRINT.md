@@ -112,18 +112,18 @@ banyak fungsi) cukup ditulis SEKALI di sini.
 
 ## 5. Urutan Pengembangan (Fase)
 
-**Fase 0 — Fondasi** *(sudah mulai)*
+**Fase 0 — Fondasi** ✅ *(selesai)*
 - [x] Skema database (`tahfidzcms.sql`) — perlu tambahan `foto` & `api_tokens` (lihat §7a)
-- [ ] Setup project CI3 kosong + config database/routes/autoload
-- [ ] `MY_Controller` (session guard + role guard, untuk web)
-- [ ] `MY_API_Controller` (Bearer token guard, untuk api)
+- [x] Setup project CI3 kosong + config database/routes/autoload
+- [x] `MY_Controller` (session guard + role guard, untuk web)
+- [x] `MY_API_Controller` (Bearer token guard, untuk api)
 
-**Fase 1 — Auth & Kerangka Tampilan**
-- [ ] Model `User_model`
-- [ ] Controller `Auth` (login, logout, web/session) + hash password
-- [ ] Controller `api/Auth` (login -> issue token ke tabel `api_tokens`)
-- [ ] Template header/sidebar/footer (adaptasi dari `index.html` yang sudah ada, dipecah jadi partial view)
-- [ ] Form & handler upload foto profil (dipakai di Users & Profile)
+**Fase 1 — Auth & Kerangka Tampilan** ✅ *(selesai)*
+- [x] Model `User_model`
+- [x] Controller `Auth` (login, logout, web/session) + hash password
+- [x] Controller `api/Auth` (login -> issue token ke tabel `api_tokens`)
+- [x] Template header/sidebar/footer (adaptasi dari `index.html` yang sudah ada, dipecah jadi partial view)
+- [x] Form & handler upload foto profil (dipakai di Users & Profile)
 
 **Fase 2 — Data Master** ✅ *(selesai)*
 - [x] `Kelas_model`, `Siswa_model`, `Guru_kelas_model`
@@ -155,6 +155,15 @@ banyak fungsi) cukup ditulis SEKALI di sini.
 - [x] CSRF Protection aktif di seluruh form POST web (`csrf_protection = TRUE`), otomatis via `form_open()`/`form_close()`.
 - [x] Endpoint API (`api/*`) dikecualikan dari proteksi CSRF karena menggunakan Bearer Token header (stateless).
 
+**Fase 7 — Web Installer, Landing Page & Branding** ✅ *(selesai, belum tercatat sebelumnya di blueprint ini)*
+- [x] Controller `Installer` (4 langkah: cek syarat server, konfigurasi database, pasang skema, buat akun super admin) + `installed.lock` untuk mengunci `/installer` permanen setelah selesai
+- [x] Controller `Landing` (halaman publik sebelum login: hero, fitur, target audiens, alur kerja, CTA — mengambil identitas dari `app_settings`)
+- [x] Model `Setting_model` + tabel `app_settings` (nama lembaga, nama singkat/brand, tagline, logo)
+- [x] Controller `Settings` (form ganti logo/nama/tagline institusi, khusus admin) dengan preview logo real-time & validasi client-side
+- [x] Favicon dinamis (logo institusi atau fallback emoji) diterapkan konsisten di landing, login, dan seluruh halaman aplikasi
+- [x] Halaman error kustom (`errors/html/*`) menggantikan tampilan default CI3, dengan detail teknis disembunyikan otomatis saat `ENVIRONMENT = production`
+- [x] Dokumentasi terpisah: `INSTALLATION.md`, `INSTALLER_TEST_PLAN.md`, `BRANDING_TEST_PLAN.md`, `QA_REGRESSION.md`, `UAT_TEST_PLAN.md`
+
 ---
 
 ## 5a. Catatan Perbaikan & Keamanan (Code Review)
@@ -165,10 +174,15 @@ Saat review kode di branch `develop`, ditemukan dan diperbaiki:
 2. **[FUNGSIONAL] Upload rekaman audio gagal di Chrome/Firefox** — JS `MediaRecorder` menghasilkan `audio/webm`, tapi kode lama melabelinya sebagai `.mp3` palsu, ditolak validasi MIME CI3. ✅ **Fix**: JS kini jujur pakai `mediaRecorder.mimeType` asli, `Upload_handler` menerima ekstensi `webm`, dan `application/config/mimes.php` baru ditambahkan untuk memetakan `webm` ke `audio/webm` juga (bukan cuma `video/webm` seperti bawaan CI3).
 3. **[MINOR] Race condition kode setoran** — sebelumnya `kode_setoran` dihitung dari "baca baris terakhir + 1" SEBELUM insert, rawan duplikat kalau dua guru submit bersamaan. ✅ **Fix**: `Setoran_model::create()` sekarang insert dulu dengan kode sementara unik (`uniqid`), lalu menimpa dengan kode final berbasis `insert_id` (dijamin unik oleh auto-increment MySQL) — semua dalam satu transaction. Format kode berubah dari `STR-0001` (4 digit) menjadi `STR-000001` (6 digit) untuk konsistensi dengan skala data yang lebih besar.
 4. **[KEAMANAN] Proteksi CSRF (Cross-Site Request Forgery)** — Semua form POST (`auth/login.php`, `users/form.php`, `profile/index.php`, `setoran/form.php`, `kelas/index.php`, `penilaian/index.php`) dikonversi ke `form_open()`/`form_close()` CI3 dengan konfigurasi `csrf_protection` aktif di `config.php`.
+5. **[KEAMANAN] Instalasi destruktif tanpa konfirmasi** — Opsi "Fresh Installation" di `installer/step3` (drop seluruh tabel) sebelumnya bisa disubmit hanya dengan satu klik radio button. ✅ **Fix**: ditambahkan konfirmasi wajib mengetik ulang nama database sebelum tombol submit aktif.
+6. **[KEAMANAN] Kebocoran detail teknis di halaman error** — `error_php.php` dan `error_exception.php` sebelumnya selalu menampilkan file path lengkap server, nomor baris, dan nama exception class ke pengunjung. ✅ **Fix**: detail teknis kini hanya tampil bila `ENVIRONMENT !== 'production'`; di production, pesan diganti generik. Berlaku juga untuk pesan error database.
+7. **[KEAMANAN] Endpoint `api/auth/login` rentan brute-force** — tidak ada pembatasan jumlah percobaan login gagal. ✅ **Fix**: ditambahkan `Login_attempt_model` + tabel `login_attempts` — maksimal 5 percobaan gagal per username+IP dalam jendela 15 menit, mengembalikan `429 Too Many Requests` bila terlampaui, reset otomatis saat login berhasil.
+8. **[KEAMANAN] Kebocoran pesan exception mentah di API** — `api/Setoran::simpan()` mengembalikan `$e->getMessage()` mentah (bisa berisi nama tabel/kolom database) langsung ke client. ✅ **Fix**: pesan ke client diganti generik, detail teknis dicatat via `log_message('error', ...)` untuk keperluan debugging developer saja.
 
 Controller yang memanggil `generate_kode_setoran()` untuk mengisi `kode_setoran` sebelum insert (di `Setoran.php` & `api/Setoran.php`) sudah dibersihkan — fungsi itu sekarang HANYA dipakai untuk preview di form (`auto_kode`), tidak lagi mempengaruhi data yang benar-benar tersimpan.
 
 ---
+
 
 ## 6. Keputusan Desain Kunci (agar tidak berubah-ubah di tengah jalan)
 

@@ -71,12 +71,21 @@
 						</label>
 
 						<label class="flex items-start gap-3 p-4 rounded-xl border border-rose-200 hover:bg-rose-50/50 cursor-pointer">
-							<input type="radio" name="install_type" value="fresh" class="mt-1 text-rose-600 focus:ring-rose-500">
+							<input type="radio" name="install_type" value="fresh" id="opt-fresh" onchange="toggleFreshConfirm()" class="mt-1 text-rose-600 focus:ring-rose-500">
 							<div>
 								<div class="text-sm font-bold text-rose-800">Fresh Installation (Hapus & Pasang Ulang Skema)</div>
 								<div class="text-xs text-rose-600">Seluruh tabel tahfidzcms akan di-drop dan diganti dengan skema fresh proyek.</div>
 							</div>
 						</label>
+
+						<div id="fresh-confirm-box" class="hidden p-4 bg-rose-50 border border-rose-200 rounded-xl space-y-2">
+							<div class="text-xs font-bold text-rose-800 flex items-center gap-2">
+								<i class="fa-solid fa-triangle-exclamation"></i> Konfirmasi wajib: tindakan ini tidak bisa dibatalkan.
+							</div>
+							<p class="text-xs text-rose-700">Ketik ulang nama database <strong><?php echo htmlspecialchars($db_name); ?></strong> untuk memastikan Anda benar-benar ingin menghapus seluruh data lama.</p>
+							<input type="text" id="fresh-confirm-input" oninput="checkFreshConfirm()" placeholder="Ketik: <?php echo htmlspecialchars($db_name); ?>"
+								class="w-full bg-white border border-rose-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-rose-500 font-mono">
+						</div>
 					</div>
 				<?php else: ?>
 					<input type="hidden" name="install_type" value="fresh">
@@ -92,7 +101,7 @@
 					<a href="<?php echo site_url('installer/step2'); ?>" class="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium">
 						<i class="fa-solid fa-arrow-left mr-1"></i> Kembali
 					</a>
-					<button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-medium text-sm transition shadow-sm inline-flex items-center gap-2">
+					<button type="submit" id="btn-submit-schema" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-medium text-sm transition shadow-sm inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
 						Pasang Skema & Lanjut <i class="fa-solid fa-arrow-right"></i>
 					</button>
 				</div>
@@ -100,6 +109,32 @@
 
 		</div>
 	</main>
+
+	<?php if ($is_existing): ?>
+	<script>
+	const DB_NAME_CONFIRM = <?php echo json_encode($db_name); ?>;
+
+	function toggleFreshConfirm() {
+		const isFresh = document.getElementById('opt-fresh').checked;
+		const box = document.getElementById('fresh-confirm-box');
+		const btn = document.getElementById('btn-submit-schema');
+
+		box.classList.toggle('hidden', ! isFresh);
+
+		if (isFresh) {
+			document.getElementById('fresh-confirm-input').value = '';
+			btn.disabled = true;
+		} else {
+			btn.disabled = false;
+		}
+	}
+
+	function checkFreshConfirm() {
+		const val = document.getElementById('fresh-confirm-input').value;
+		document.getElementById('btn-submit-schema').disabled = (val !== DB_NAME_CONFIRM);
+	}
+	</script>
+	<?php endif; ?>
 
 	<!-- Footer -->
 	<footer class="text-center py-4 text-xs text-gray-400 border-t bg-white">
