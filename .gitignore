@@ -2,11 +2,15 @@
 vendor/
 composer.lock
 
-# Environment / Credentials
+# Environment / Credentials / Locks
 .env
+installed.lock
+application/config/installed.lock
 application/config/database.php.local
 
 # Uploads
+uploads/branding/*
+!uploads/branding/.gitkeep
 uploads/profile/*
 !uploads/profile/.gitkeep
 uploads/setoran_audio/*
