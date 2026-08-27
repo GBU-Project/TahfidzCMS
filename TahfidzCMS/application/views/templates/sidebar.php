@@ -10,11 +10,20 @@
 <aside id="main-sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-64 bg-emerald-900 text-white flex-shrink-0 min-h-screen p-4 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col justify-between">
 	<div>
 		<div class="flex items-center justify-between mb-6 px-2">
-			<div class="flex items-center gap-2">
-				<span class="text-2xl">📖</span>
-				<div class="text-xl font-bold tracking-tight">TahfidzCMS</div>
+			<div class="flex items-center gap-2.5 min-w-0">
+				<?php if (! empty($app_settings['institution_logo']) && file_exists('./' . $app_settings['institution_logo'])): ?>
+					<img src="<?php echo base_url($app_settings['institution_logo']); ?>" alt="Logo" class="w-8 h-8 rounded-lg object-contain bg-white/10 p-0.5 flex-shrink-0">
+				<?php else: ?>
+					<span class="text-2xl flex-shrink-0">📖</span>
+				<?php endif; ?>
+				<div class="min-w-0">
+					<div class="text-base font-bold tracking-tight truncate leading-tight">
+						<?php echo htmlspecialchars(isset($app_settings['institution_short_name']) ? $app_settings['institution_short_name'] : 'TahfidzCMS'); ?>
+					</div>
+					<div class="text-[10px] text-emerald-300 font-medium tracking-wide truncate">Tahfidz Portal</div>
+				</div>
 			</div>
-			<button type="button" onclick="toggleSidebar()" class="md:hidden text-emerald-300 hover:text-white p-1">
+			<button type="button" onclick="toggleSidebar()" class="md:hidden text-emerald-300 hover:text-white p-1 flex-shrink-0">
 				<i class="fa-solid fa-xmark text-lg"></i>
 			</button>
 		</div>
@@ -60,6 +69,11 @@
 			<?php endif; ?>
 
 			<div class="pt-2 pb-1 px-3 text-[11px] font-bold tracking-wider uppercase text-emerald-400">Pengaturan</div>
+			<?php if ($role === 'admin'): ?>
+				<a href="<?php echo site_url('settings'); ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition <?php echo ($current_segment === 'settings') ? 'bg-emerald-800 text-white shadow-sm font-semibold' : 'text-emerald-100 hover:bg-emerald-800/60 hover:text-white'; ?>">
+					<i class="fa-solid fa-building-columns w-5 text-center"></i> Identitas Lembaga
+				</a>
+			<?php endif; ?>
 			<a href="<?php echo site_url('profile'); ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition <?php echo ($current_segment === 'profile') ? 'bg-emerald-800 text-white shadow-sm font-semibold' : 'text-emerald-100 hover:bg-emerald-800/60 hover:text-white'; ?>">
 				<i class="fa-solid fa-user w-5 text-center"></i> Profil Saya
 			</a>

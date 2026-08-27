@@ -25,6 +25,7 @@ Dokumen ini menjelaskan langkah-langkah instalasi aplikasi **TahfidzCMS** (CodeI
 1. Ekstrak berkas `TahfidzCMS.zip` ke direktori root web server Anda (misal: `public_html/` pada cPanel, atau `htdocs/tahfidzcms/` pada XAMPP).
 2. Pastikan permission direktori berikut dapat ditulisi (*writable* / `0755` atau `0775`):
    - `uploads/`
+   - `uploads/branding/`
    - `uploads/profile/`
    - `uploads/setoran_audio/`
    - `application/config/`
@@ -59,12 +60,18 @@ Dokumen ini menjelaskan langkah-langkah instalasi aplikasi **TahfidzCMS** (CodeI
    - **Password**: Kata sandi admin (minimal 6 karakter)
 2. Klik **Selesaikan Instalasi & Kunci**.
 
-### Langkah 6: Selesai
+### Langkah 6: Selesai & Pengaturan Identitas Lembaga
 1. Sistem akan otomatis:
    - Mengisi konfigurasi database di `application/config/database.php`.
+   - Mengisi default data branding di tabel `app_settings`.
    - Membuat file proteksi `installed.lock`.
    - Menghancurkan session installer.
 2. Klik **Masuk ke Halaman Login** untuk mulai menggunakan TahfidzCMS.
+3. Setelah login sebagai Super Admin, Anda dapat menyesuaikan logo, nama lembaga, nama brand, dan tagline resmi sekolah/pesantren melalui menu:
+   ```
+   Dashboard → Pengaturan → Identitas Lembaga
+   ```
+   Perubahan ini akan otomatis terefleksi secara langsung pada **Public Landing Page**, **Header**, **Sidebar**, dan seluruh halaman aplikasi tanpa mengubah source code.
 
 ---
 

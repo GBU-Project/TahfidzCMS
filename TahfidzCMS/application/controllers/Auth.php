@@ -21,6 +21,7 @@ class Auth extends CI_Controller
 
 		$this->load->database();
 		$this->load->model('User_model');
+		$this->load->model('Setting_model');
 	}
 
 	/**
@@ -48,7 +49,12 @@ class Auth extends CI_Controller
 			return;
 		}
 
-		$this->load->view('auth/login', array('error' => null));
+		$settings = $this->Setting_model->get_all();
+
+		$this->load->view('auth/login', array(
+			'error'    => null,
+			'settings' => $settings,
+		));
 	}
 
 	private function _process_login()
@@ -57,7 +63,8 @@ class Auth extends CI_Controller
 		$this->form_validation->set_rules('password', 'Password', 'required');
 
 		if ($this->form_validation->run() === FALSE) {
-			$this->load->view('auth/login', array('error' => validation_errors()));
+			$settings = $this->Setting_model->get_all();
+			$this->load->view('auth/login', array('error' => validation_errors(), 'settings' => $settings));
 			return;
 		}
 
@@ -67,7 +74,8 @@ class Auth extends CI_Controller
 		$user = $this->User_model->verify_credentials($username, $password);
 
 		if (! $user) {
-			$this->load->view('auth/login', array('error' => 'NIP/NISN atau password salah.'));
+			$settings = $this->Setting_model->get_all();
+			$this->load->view('auth/login', array('error' => 'NIP/NISN atau password salah.', 'settings' => $settings));
 			return;
 		}
 

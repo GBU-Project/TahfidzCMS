@@ -36,6 +36,7 @@ class MY_Controller extends CI_Controller
 		$this->load->database();
 		$this->load->model('User_model');
 		$this->load->model('Guru_kelas_model');
+		$this->load->model('Setting_model');
 
 		$this->_check_session();
 		$this->_load_kelas_diizinkan();
@@ -137,6 +138,7 @@ class MY_Controller extends CI_Controller
 	protected function render($view_path, array $data = array())
 	{
 		$data['current_user'] = $this->user;
+		$data['app_settings'] = $this->Setting_model->get_all();
 
 		$this->load->view('templates/header', $data);
 		$this->load->view('templates/sidebar', $data);

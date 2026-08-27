@@ -160,8 +160,30 @@ CREATE TABLE `setoran` (
 -- ---------------------------------------------------------------------
 
 -- ---------------------------------------------------------------------
+-- 5. TABEL APP_SETTINGS
+-- Konfigurasi identitas lembaga dan pengaturan global aplikasi
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `app_settings`;
+CREATE TABLE `app_settings` (
+  `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `setting_key`   VARCHAR(100) NOT NULL,
+  `setting_value` TEXT         NULL,
+  `setting_type`  VARCHAR(50)  NOT NULL DEFAULT 'text',
+  `updated_at`    DATETIME     NULL     ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_setting_key` (`setting_key`)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
 -- SEED DATA AWAL (opsional, setara setupInitialData() di Apps Script)
 -- ---------------------------------------------------------------------
+
+INSERT INTO `app_settings` (`setting_key`, `setting_value`, `setting_type`) VALUES
+('institution_name', 'TahfidzCMS', 'text'),
+('institution_short_name', 'TahfidzCMS', 'text'),
+('institution_tagline', 'Sistem Monitoring Hafalan Al-Qur\'an', 'text'),
+('institution_logo', '', 'image');
+
 
 INSERT INTO `kelas` (`nama_kelas`) VALUES ('7A'), ('7B'), ('8A'), ('8B');
 

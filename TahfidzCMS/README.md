@@ -27,8 +27,10 @@ application/
 │   ├── Poin_calculator.php     ← rumus hitung poin & badge hafalan
 │   └── Upload_handler.php      ← upload foto profil & rekaman audio bukti setoran
 ├── controllers/
+│   ├── Landing.php       ← Public Landing Page dengan identitas lembaga dinamis
 │   ├── Auth.php          ← login/logout web (session)
 │   ├── Dashboard.php     ← ringkasan statistik & aktivitas per role
+│   ├── Settings.php      ← kelola identitas lembaga & logo (khusus super admin)
 │   ├── Setoran.php       ← input setoran & perekam audio WebM
 │   ├── Penilaian.php     ← koreksi & review audio penilaian
 │   ├── Riwayat.php       ← filter histori setoran
@@ -40,6 +42,8 @@ application/
 │   ├── Profile.php       ← update identitas & ganti password
 │   └── api/              ← endpoint REST API JSON (Auth, Setoran, Riwayat, Progress, Leaderboard, Dashboard)
 ├── views/
+│   ├── landing/index.php
+│   ├── settings/index.php
 │   ├── auth/login.php
 │   ├── dashboard/index.php
 │   ├── setoran/{index,form}.php
@@ -56,6 +60,7 @@ application/
     └── format_helper.php  ← format tanggal ID & durasi audio
 
 uploads/
+├── branding/         ← logo dan identitas visual lembaga
 ├── profile/          ← foto profil users
 └── setoran_audio/    ← rekaman audio bukti setoran
 

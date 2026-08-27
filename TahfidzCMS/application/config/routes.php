@@ -9,19 +9,23 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | API routes: JSON response (token-based auth), semua diawali /api/
 */
 
-$route['default_controller'] = (file_exists(FCPATH . 'installed.lock') || file_exists(APPPATH . 'config/installed.lock')) ? 'auth' : 'installer';
+$route['default_controller'] = 'landing';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
 // ---------------------------------------------------------------
 // WEB ROUTES
 // ---------------------------------------------------------------
+$route['landing']          = 'landing/index';
 $route['installer']        = 'installer/index';
 $route['installer/(:any)'] = 'installer/$1';
 
 $route['login']            = 'auth/login';
 $route['logout']           = 'auth/logout';
 $route['dashboard']        = 'dashboard/index';
+
+$route['settings']         = 'settings/index';
+$route['settings/update']  = 'settings/update';
 
 $route['setoran']              = 'setoran/index';
 $route['setoran/tambah']       = 'setoran/tambah';

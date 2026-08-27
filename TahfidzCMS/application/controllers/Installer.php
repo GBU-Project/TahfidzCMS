@@ -67,6 +67,7 @@ class Installer extends CI_Controller
 
 		$directories = array(
 			'uploads/'                => FCPATH . 'uploads',
+			'uploads/branding/'       => FCPATH . 'uploads/branding',
 			'uploads/profile/'        => FCPATH . 'uploads/profile',
 			'uploads/setoran_audio/'  => FCPATH . 'uploads/setoran_audio',
 			'application/config/'     => APPPATH . 'config',
