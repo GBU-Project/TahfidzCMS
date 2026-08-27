@@ -1,128 +1,125 @@
 # TahfidzCMS
 
-Aplikasi monitoring hafalan Al-Qur'an berbasis CodeIgniter 3 + MySQL,
-migrasi dari prototipe Google Apps Script.
+<p align="center">
+  <strong>Sistem Informasi & Monitoring Hafalan Al-Qur'an Berbasis Web</strong><br>
+  <em>Solusi manajemen halaqah tahfidz yang terstruktur, akuntabel, dan mendukung multi-lembaga (pesantren, madrasah, dan sekolah Islam).</em>
+</p>
 
-## Yang sudah tersedia di skeleton ini (Fase 0–1)
+<p align="center">
+  <img src="https://img.shields.io/badge/PHP-7.4%20%7C%208.1%20%7C%208.2-777BB4?style=flat-square&logo=php&logoColor=white" alt="PHP Version">
+  <img src="https://img.shields.io/badge/Framework-CodeIgniter%203-EF4444?style=flat-square&logo=codeigniter&logoColor=white" alt="Framework">
+  <img src="https://img.shields.io/badge/Database-MySQL%208.0%2B-00758F?style=flat-square&logo=mysql&logoColor=white" alt="Database">
+  <img src="https://img.shields.io/badge/License-Open%20Source-10B981?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/Maintained%20by-GBU--Projects-047857?style=flat-square" alt="GBU-Projects">
+</p>
 
-```
-application/
-├── config/
-│   ├── config.php       ← konfigurasi proteksi CSRF (gabungkan ke config.php CI3)
-│   ├── database.php     ← sudah pakai getenv(), tinggal isi kredensial
-│   ├── routes.php       ← rute web (session) & api (token) sudah dipetakan
-│   ├── autoload.php     ← gabungkan ke autoload.php CI3 bawaan Anda
-│   └── mimes.php        ← mapping MIME audio/webm untuk perekam suara browser
-├── core/
-│   ├── MY_Controller.php       ← guard session + role, untuk semua controller web
-│   └── MY_API_Controller.php   ← guard Bearer token, untuk semua controller api/*
-├── models/
-│   ├── User_model.php          ← verifikasi login, hash password (bcrypt)
-│   ├── Guru_kelas_model.php    ← satu-satunya sumber "kelas yang diampu guru"
-│   ├── Api_token_model.php     ← terbit/validasi/cabut token API
-│   ├── Kelas_model.php         ← CRUD data master kelas
-│   ├── Siswa_model.php         ← CRUD data siswa & leaderboard
-│   └── Setoran_model.php       ← CRUD & transaksi atomic setoran hafalan
-├── libraries/
-│   ├── Poin_calculator.php     ← rumus hitung poin & badge hafalan
-│   └── Upload_handler.php      ← upload foto profil & rekaman audio bukti setoran
-├── controllers/
-│   ├── Landing.php       ← Public Landing Page dengan identitas lembaga dinamis
-│   ├── Auth.php          ← login/logout web (session)
-│   ├── Dashboard.php     ← ringkasan statistik & aktivitas per role
-│   ├── Settings.php      ← kelola identitas lembaga & logo (khusus super admin)
-│   ├── Setoran.php       ← input setoran & perekam audio WebM
-│   ├── Penilaian.php     ← koreksi & review audio penilaian
-│   ├── Riwayat.php       ← filter histori setoran
-│   ├── Progress.php      ← matriks 30 Juz & target hafalan santri
-│   ├── Leaderboard.php   ← ranking santri & podium Top 3
-│   ├── Laporan.php       ← rekapitulasi & export CSV/Excel
-│   ├── Users.php         ← CRUD users/siswa/guru-kelas, khusus admin
-│   ├── Kelas.php         ← CRUD data master kelas, khusus admin
-│   ├── Profile.php       ← update identitas & ganti password
-│   └── api/              ← endpoint REST API JSON (Auth, Setoran, Riwayat, Progress, Leaderboard, Dashboard)
-├── views/
-│   ├── landing/index.php
-│   ├── settings/index.php
-│   ├── auth/login.php
-│   ├── dashboard/index.php
-│   ├── setoran/{index,form}.php
-│   ├── penilaian/index.php
-│   ├── riwayat/index.php
-│   ├── progress/index.php
-│   ├── leaderboard/index.php
-│   ├── laporan/index.php
-│   ├── users/{index,form}.php
-│   ├── kelas/index.php
-│   ├── profile/index.php
-│   └── templates/{header,sidebar,footer}.php
-└── helpers/
-    └── format_helper.php  ← format tanggal ID & durasi audio
+---
 
-uploads/
-├── branding/         ← logo dan identitas visual lembaga
-├── profile/          ← foto profil users
-└── setoran_audio/    ← rekaman audio bukti setoran
+## 📖 Tentang TahfidzCMS
 
-database/
-└── tahfidzcms.sql    ← skema lengkap database MySQL
-```
+**TahfidzCMS** adalah aplikasi web open-source yang dirancang untuk mempermudah pencatatan, evaluasi kualitas tajwid & kelancaran, monitoring target 30 Juz, serta pelaporan capaian hafalan santri secara real-time. 
 
-## Cara pakai skeleton ini
+Aplikasi ini mendukung arsitektur **kustomisasi identitas lembaga dinamis** sehingga dapat langsung digunakan oleh berbagai yayasan, pesantren, maupun sekolah tahfidz tanpa perlu mengubah source code.
 
-1. **Download CodeIgniter 3** resmi dari https://codeigniter.com/cifiles/CodeIgniter-3.1.13.zip
-   (atau versi 3.x terbaru), lalu **timpa/gabungkan** folder `application/`
-   di zip ini ke folder `application/` bawaan CI3 — jangan replace seluruh
-   folder CI3, karena `application/third_party`, `system/`, dsb tetap perlu ada.
+---
 
-2. Import skema database:
-   ```
-   mysql -u root -p < database/tahfidzcms.sql
-   ```
+## ✨ Fitur Utama
 
-3. Set kredensial database via environment variable, atau edit langsung
-   `application/config/database.php`:
-   ```
-   DB_HOST=localhost
-   DB_USER=root
-   DB_PASS=
-   DB_NAME=tahfidzcms
-   ```
+- 🌐 **Public Landing Page Dinamis**: Halaman profil depan institusi yang modern dan responsif, menampilkan visi, alur tahfidz, dan branding lembaga secara otomatis.
+- ⚙️ **Modul Identitas Lembaga**: Super Admin dapat mengunggah logo, mengubah nama lembaga, nama brand, dan tagline secara langsung dari Dashboard.
+- 🎙️ **Pencatatan Setoran & Audio Bukti**: Input setoran ziyadah/muroja'ah santri dilengkapi perekam suara langsung via browser (WebM/Opus) atau upload file audio sebagai bukti verifikasi.
+- 📊 **Evaluasi & Penilaian Tajwid**: Review kelancaran (Lancar, Cukup, Perlu Perbaikan) dan penilaian mutu (A/B/C) dengan perhitungan poin otomatis.
+- 🏆 **Gamifikasi & Leaderboard**: Papan peringkat santri (Top Santri per kelas & global) serta sistem lencana bertingkat (*Pemula* hingga *Hafidz 30 Juz*).
+- 📈 **Matriks Kemajuan 30 Juz**: Visualisasi interaktif capaian juz santri vs target hafalan jenjang kelas.
+- 📑 **Export Laporan Excel**: Ekspor rekapitulasi data setoran, nilai, dan statistik santri ke format spreadsheet (.xls) yang rapi dan siap cetak.
+- 🔒 **Keamanan & Role-Based Access Control (RBAC)**:
+  - **Super Admin**: Kelola master pengguna, kelas, penugasan guru, dan identitas lembaga.
+  - **Dewan Guru**: Mengelola dan menilai santri khusus pada kelas yang diampu (IDOR-safe).
+  - **Santri / Siswa**: Mengakses riwayat hafalan, target juz, dan leaderboard pribadi.
+  - **API Rate Limiting & CSRF Protected**: Perlindungan brute-force login dan verifikasi token form.
 
-4. Pastikan hash password di seed data (`$2y$10$CONTOH_HASH_GANTI_INI`)
-   sudah diganti dengan hash bcrypt asli. Bisa generate cepat lewat php -a:
-   ```php
-   php -r "echo password_hash('123456', PASSWORD_BCRYPT), PHP_EOL;"
-   ```
-   lalu update kolom `password` di tabel `users` dengan hasilnya.
+---
 
-5. Set folder `uploads/` writable oleh web server:
-   ```
-   chmod -R 755 uploads/
-   ```
+## 🗂️ Struktur Proyek
 
-6. Jalankan (dengan PHP built-in server untuk development):
-   ```
-   php -S localhost:8080 -t .
-   ```
-   lalu buka `http://localhost:8080/login` (web) atau uji
-   `POST http://localhost:8080/index.php/api/auth/login` (api) dengan Postman/curl.
-
-## Contoh test login API
-
-```bash
-curl -X POST http://localhost:8080/index.php/api/auth/login \
-  -d "username=1001" -d "password=123456"
+```text
+TahfidzCMS/
+├── application/             # Source code aplikasi CodeIgniter 3
+│   ├── config/              # Konfigurasi routes, database, CSRF, MIME types
+│   ├── controllers/         # Web controllers & API JSON endpoints
+│   ├── core/                # MY_Controller (Web Guard) & MY_API_Controller (Token Guard)
+│   ├── helpers/             # Format tanggal & durasi audio helper
+│   ├── libraries/           # Kalkulator poin hafalan, upload handler, exporter
+│   ├── models/              # Model data (User, Siswa, Setoran, Kelas, Settings, dll)
+│   └── views/               # Antarmuka tampilan (Landing, Dashboard, Setoran, dll)
+├── database/                # Skema SQL database (tahfidzcms.sql)
+├── docs/                    # Dokumentasi teknis lengkap & rencana pengujian
+│   ├── BLUEPRINT.md         # Blueprint arsitektur dan fase pengembangan
+│   ├── BRANDING_TEST_PLAN.md# Rencana pengujian modul identitas lembaga
+│   ├── INSTALLATION.md      # Panduan instalasi dan deployment
+│   ├── INSTALLER_TEST_PLAN.md# Rencana uji Web Installer interaktif
+│   ├── QA_REGRESSION.md     # Laporan audit regresi dan keamanan
+│   └── UAT_TEST_PLAN.md     # Skenario pengujian User Acceptance Testing
+├── uploads/                 # Direktori penyimpanan berkas upload
+│   ├── branding/            # Logo lembaga
+│   ├── profile/             # Foto profil pengguna
+│   └── setoran_audio/       # Berkas audio rekaman bukti setoran
+└── README.md
 ```
 
-Response sukses akan berisi `token`, yang kemudian dipakai di endpoint
-lain sbg header:
-```
-Authorization: Bearer <token>
-```
+---
 
-## Selanjutnya (Fase 2 dst.)
+## 🚀 Panduan Instalasi Cepat
 
-Lihat `BLUEPRINT.md` untuk urutan pengembangan modul berikutnya:
-Kelola Users → Setoran (+ rekam audio) → Penilaian → Riwayat/Progress/
-Leaderboard → Laporan Excel → Profile.
+TahfidzCMS dilengkapi **Web Installer Interaktif** untuk memudahkan pemasangan di server hosting cPanel, VPS, maupun local server (XAMPP/Laragon).
+
+1. **Persyaratan Server**:
+   - PHP versi **7.4**, **8.1**, atau **8.2**.
+   - Ekstensi PHP: `mysqli`, `mbstring`, `json`, `session`, `openssl`, `fileinfo`.
+   - Database: MySQL 8.0+ atau MariaDB 10.4+.
+
+2. **Langkah Pemasangan via Browser**:
+   - Ekstrak source code ke folder web server Anda (misal `c:/xampp/htdocs/tahfidzcms/` atau `public_html/`).
+   - Buka browser dan akses alamat instalasi:
+     ```
+     http://localhost/tahfidzcms/installer
+     ```
+   - Ikuti 4 langkah panduan Web Installer:
+     1. **Pemeriksaan Syarat Server & Izin Folder**.
+     2. **Konfigurasi Database MySQL**.
+     3. **Pemasangan Skema Database**.
+     4. **Pembuatan Akun Super Admin**.
+   - Setelah selesai, sistem otomatis terkunci (`installed.lock`) dan siap digunakan.
+
+> 📖 **Dokumentasi Lengkap Instalasi**: Silakan lihat di [docs/INSTALLATION.md](docs/INSTALLATION.md).
+
+---
+
+## ⚙️ Kustomisasi Identitas Lembaga
+
+Setelah instalasi selesai, Super Admin dapat langsung menyesuaikan branding sekolah/pesantren:
+1. Login sebagai Super Admin melalui `/login`.
+2. Masuk ke menu **Pengaturan → Identitas Lembaga** (`/settings`).
+3. Unggah Logo resmi, ubah Nama Lembaga, Nama Singkat / Brand, dan Tagline.
+4. Klik **Simpan Perubahan**.
+5. Identitas akan langsung terefleksi secara otomatis di **Public Landing Page**, **Header Dashboard**, **Sidebar**, dan **Login Portal**.
+
+---
+
+## 📚 Dokumentasi Teknis Tambahan
+
+Seluruh dokumen arsitektur dan pengujian tersimpan rapi di direktori **[`docs/`](docs/)**:
+- [Panduan Instalasi & Deployment](docs/INSTALLATION.md)
+- [Blueprint Arsitektur Sistem](docs/BLUEPRINT.md)
+- [Laporan Audit QA & Regresi Keamanan](docs/QA_REGRESSION.md)
+- [Rencana UAT (User Acceptance Testing)](docs/UAT_TEST_PLAN.md)
+- [Rencana Pengujian Identitas Lembaga & Branding](docs/BRANDING_TEST_PLAN.md)
+- [Rencana Pengujian Web Installer](docs/INSTALLER_TEST_PLAN.md)
+
+---
+
+## 📄 Lisensi & Atribusi
+
+- **Pengembang & Pemelihara**: **GBU-Projects**
+- **Lisensi**: Proyek ini dirilis sebagai perangkat lunak **Open Source**.
+- &copy; 2026 **GBU-Projects** &bull; *TahfidzCMS - Sistem Monitoring Hafalan Al-Qur'an Santri*.
