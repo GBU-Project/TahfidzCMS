@@ -89,8 +89,9 @@
 		</div>
 	</main>
 
+	<!-- Footer -->
 	<footer class="text-center py-4 text-xs text-gray-400 border-t bg-white">
-		TahfidzCMS &copy; 2026. Dikembangkan untuk kemudahan monitoring tahfidz santri.
+		&copy; <?php echo date('Y'); ?> <strong>GBU-Projects</strong> &bull; TahfidzCMS Open Source Monitoring Hafalan Santri.
 	</footer>
 
 </body>

@@ -443,12 +443,12 @@
 					<a href="<?php echo site_url('login'); ?>" class="hover:text-emerald-400 transition">Portal Login</a>
 					<a href="<?php echo site_url('dashboard'); ?>" class="hover:text-emerald-400 transition">Dashboard</a>
 					<span>&bull;</span>
-					<span>Powered by <strong>TahfidzCMS</strong></span>
+					<span>Powered by <strong>GBU-Projects</strong></span>
 				</div>
 			</div>
 
 			<div class="pt-6 text-center text-xs text-slate-500">
-				&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($settings['institution_name']); ?>. Seluruh hak cipta dilindungi undang-undang.
+				&copy; <?php echo date('Y'); ?> <strong>GBU-Projects</strong> &bull; Open Source Project. Dikelola untuk <?php echo htmlspecialchars($settings['institution_name']); ?>.
 			</div>
 
 		</div>
