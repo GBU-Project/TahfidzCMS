@@ -24,9 +24,9 @@ class Penilaian extends MY_Controller
 	 */
 	public function index()
 	{
-		$kelas_id = $this->input->get('kelas_id');
-		$status   = $this->input->get('status');
-		$search   = $this->input->get('q');
+		$kelas_id   = $this->input->get('kelas_id');
+		$keterangan = $this->input->get('keterangan');
+		$search     = $this->input->get('q');
 
 		if ($kelas_id && ! $this->boleh_akses_kelas($kelas_id)) {
 			show_error('Anda tidak memiliki akses ke kelas ini.', 403, 'Akses Ditolak');
@@ -34,19 +34,20 @@ class Penilaian extends MY_Controller
 		}
 
 		$filter = array(
-			'kelas_id'  => $kelas_id,
-			'kelas_ids' => $this->is_guru() ? $this->kelas_diizinkan : array(),
-			'status'    => $status,
-			'search'    => $search,
+			'kelas_id'   => $kelas_id,
+			'kelas_ids'  => $this->is_guru() ? $this->kelas_diizinkan : array(),
+			'keterangan' => $keterangan,
+			'search'     => $search,
 		);
 
 		$data = array(
-			'title'          => 'Penilaian & Evaluasi Setoran',
-			'setoran_list'   => $this->Setoran_model->get_all($filter, 100),
-			'kelas_list'     => $this->is_guru() ? $this->Kelas_model->get_by_ids($this->kelas_diizinkan) : $this->Kelas_model->get_all(),
-			'selected_kelas' => $kelas_id,
-			'selected_status'=> $status,
-			'search'         => $search,
+			'title'              => 'Penilaian & Evaluasi Setoran',
+			'setoran_list'       => $this->Setoran_model->get_all($filter, 100),
+			'kelas_list'         => $this->is_guru() ? $this->Kelas_model->get_by_ids($this->kelas_diizinkan) : $this->Kelas_model->get_all(),
+			'selected_kelas'     => $kelas_id,
+			'selected_keterangan'=> $keterangan,
+			'search'             => $search,
+			'jenis_setoran_list' => Poin_calculator::JENIS_SETORAN_LABEL,
 		);
 
 		$this->render('penilaian/index', $data);
@@ -68,8 +69,13 @@ class Penilaian extends MY_Controller
 			return;
 		}
 
-		$this->form_validation->set_rules('nilai', 'Nilai Tajwid', 'required|in_list[A,B,C]');
-		$this->form_validation->set_rules('status', 'Status Kelancaran', 'required|in_list[Lancar,Cukup,Perlu Perbaikan]');
+		$this->form_validation->set_rules('jenis_setoran', 'Jenis Setoran', 'required|in_list[ziyadah,murojaah,qc]');
+		$this->form_validation->set_rules('jumlah_kesalahan', 'Jumlah Kesalahan', 'required|numeric|greater_than_equal_to[0]');
+		$this->form_validation->set_rules('kualitas_bacaan', 'Kualitas Bacaan', 'required|in_list[baik,kurang_baik]');
+
+		if ($this->input->post('jenis_setoran') === 'qc') {
+			$this->form_validation->set_rules('hasil_qc', 'Hasil Quality Control', 'required|in_list[layak_tasmi,belum_layak]');
+		}
 
 		if ($this->form_validation->run() === FALSE) {
 			$this->session->set_flashdata('error', validation_errors());
@@ -77,9 +83,13 @@ class Penilaian extends MY_Controller
 			return;
 		}
 
+		$jenis_setoran = $this->input->post('jenis_setoran', TRUE);
+
 		$update_data = array(
-			'nilai'              => $this->input->post('nilai', TRUE),
-			'status'             => $this->input->post('status', TRUE),
+			'jenis_setoran'      => $jenis_setoran,
+			'jumlah_kesalahan'   => (int) $this->input->post('jumlah_kesalahan'),
+			'kualitas_bacaan'    => $this->input->post('kualitas_bacaan', TRUE),
+			'hasil_qc'           => ($jenis_setoran === 'qc') ? $this->input->post('hasil_qc', TRUE) : null,
 			'catatan'            => $this->input->post('catatan', TRUE) ?: null,
 			'guru_pengoreksi_id' => $this->user->id,
 		);

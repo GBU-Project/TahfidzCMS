@@ -188,7 +188,7 @@
 					</div>
 					<h3 class="text-base font-bold text-slate-900 mb-1.5">Input Setoran Cepat</h3>
 					<p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-						Pencatatan surat, ayat, juz, nilai kelancaran (A/B/C), dan catatan tajwid hanya dalam hitungan detik saat santri menyetor.
+						Pencatatan jenis setoran (Ziyadah/Muroja'ah/QC), jumlah kesalahan, kualitas bacaan tajwid, dan catatan evaluasi secara instan.
 					</p>
 				</div>
 
@@ -360,7 +360,7 @@
 					<span class="text-4xl font-black text-emerald-200 mb-2 block">02</span>
 					<h3 class="text-base font-bold text-slate-900 mb-1">Evaluasi & Audio</h3>
 					<p class="text-xs text-slate-500">
-						Guru memasukkan surat/ayat, nilai kelancaran, catatan tajwid, dan merekam audio bukti setoran.
+						Guru menginput kesalahan & kualitas makhraj/tajwid, merekam audio bukti setoran, dan sistem otomatis mengkalkulasi predikat.
 					</p>
 				</div>
 

@@ -257,3 +257,85 @@ Model (`Siswa_model`, `Setoran_model`, dst.) tetap **satu set saja** dan dipakai
 - **Fase 1** (Auth & Kerangka) sekarang mencakup DUA jalur auth: session (web) dan token (api), dari awal — supaya struktur `MY_Controller` vs `MY_API_Controller` konsisten sejak awal, tidak ditambal belakangan.
 - **Fase 2** (Data Master) tambah: upload & simpan foto profil di form Users/Profile.
 - Modul **API** dibuat paralel mengikuti modul web di Fase 3–4 (setiap controller web punya versi api yang expose data yang sama dalam JSON).
+
+---
+
+## 8. Fase 8 — Kriteria Penilaian Tahfidz (Ziyadah/Muroja'ah/QC) 🟡 *(SEDANG BERJALAN, BELUM SELESAI)*
+
+Sumber kebenaran aturan bisnis: dokumen `KRITERIA_PENILAIAN_TAHFIDZ.docx` (dilampirkan terpisah,
+tidak disimpan di repo). Menggantikan sistem penilaian lama yang generik (`nilai` A/B/C +
+`status` Lancar/Cukup/Perlu Perbaikan) dengan sistem yang sesuai standar pesantren tahfidz.
+
+### 8a. Aturan bisnis (ringkasan)
+
+1. **Tiga jenis setoran** (`jenis_setoran`): `ziyadah` (hafalan baru, dihitung per **halaman**),
+   `murojaah` (mengulang, dihitung per **juz**), `qc` (quality control, dihitung per **2 halaman**).
+2. Guru input **`jumlah_kesalahan`** (angka) + **`kualitas_bacaan`** (`baik`/`kurang_baik` —
+   Makhraj/Tajwid/Sifatul Huruf). Guru **tidak lagi memilih skor secara manual**.
+3. Sistem hitung otomatis **`keterangan`** (`L`/`CL`/`KL`/`TL`) dari `jumlah_kesalahan` +
+   `jenis_setoran` (ambang batas beda per jenis — lihat `Poin_calculator::KETERANGAN_THRESHOLDS`),
+   lalu **`skor`** (100/95/90/85/80/75/60) dari `keterangan` + `kualitas_bacaan` (lihat
+   `Poin_calculator::SKOR_MATRIX`).
+4. Khusus `jenis_setoran = 'qc'`: guru **wajib** isi `hasil_qc` (`layak_tasmi` / `belum_layak`)
+   secara manual — murni judgment guru penguji, tidak ada rumus otomatis di dokumen sumber.
+5. **Poin leaderboard = skor apa adanya** (1:1), sama rata untuk ketiga jenis setoran, tidak ada
+   bobot/bonus ekstra untuk QC (keputusan pemilik produk, per klarifikasi sesi ini).
+6. Data lama (setoran existing nilai A/B/C) di-**migrasi**, bukan dibiarkan/diarsipkan terpisah —
+   lihat mapping lengkap di `database/migration_kriteria_penilaian.sql`.
+
+### 8b. Checklist implementasi
+
+**Backend (selesai ✅):**
+- [x] `application/libraries/Poin_calculator.php` — ditulis ulang total: `hitung_keterangan()`,
+      `hitung_skor()`, `nilai_setoran()` (helper gabungan), konstanta `KETERANGAN_THRESHOLDS`,
+      `SKOR_MATRIX`, `JENIS_SETORAN_LABEL`, `HASIL_QC_LABEL`. Fungsi lama `hitung_poin()` (berbasis
+      nilai A/B/C) **dihapus**.
+- [x] `database/tahfidzcms.sql` — skema tabel `setoran` final untuk instalasi baru (kolom
+      `jenis_setoran`, `jumlah_kesalahan`, `kualitas_bacaan`, `keterangan`, `skor`, `hasil_qc`;
+      kolom lama `nilai` & `status` **dihapus**).
+- [x] `database/migration_kriteria_penilaian.sql` **(BARU)** — untuk instalasi existing: ALTER TABLE
+      + migrasi data lama. **WAJIB dijalankan manual** sebelum kode baru dipakai di database yang
+      sudah ada isinya (lihat instruksi di dalam file, termasuk langkah backup).
+- [x] `application/models/Setoran_model.php` — `create()`, `update_penilaian()`, `get_all()`,
+      `count_all_filtered()`, `count_setoran()`, `get_progress_juz_by_nisn()`, `get_laporan_rekap()`
+      semua disesuaikan ke skema baru.
+- [x] `application/controllers/Setoran.php` (web) — validasi & data insert pakai field baru.
+- [x] `application/controllers/api/Setoran.php` — validasi, filter query, & data insert pakai field baru.
+- [x] `application/controllers/Penilaian.php` — form koreksi guru pakai field baru.
+- [x] `application/controllers/Dashboard.php` + `api/Dashboard.php` — statistik pakai kode `L/CL/KL/TL`
+      (kategori "Perlu Perbaikan" lama sekarang = gabungan `KL` + `TL`).
+- [x] `application/controllers/Riwayat.php` + `api/Riwayat.php` — filter `status` → `keterangan`.
+- [x] `application/controllers/Laporan.php` — export Excel dengan kolom lengkap baru (Jenis Setoran,
+      Jumlah Kesalahan, Kualitas Bacaan, Keterangan, Skor, Hasil QC).
+- [x] Dikonfirmasi bersih (tidak ada referensi field lama): `Leaderboard.php`, `Progress.php`,
+      `api/Leaderboard.php`, `api/Progress.php`, `Siswa_model.php`.
+
+**Frontend / View (⚠️ BELUM DIKERJAKAN — prioritas lanjutan):**
+- [ ] `application/views/setoran/form.php` — form input setoran belum punya field
+      `jenis_setoran` (select), `jumlah_kesalahan` (number input), `kualitas_bacaan` (select/radio),
+      `hasil_qc` (select, tampil kondisional hanya saat `jenis_setoran=qc`, idealnya via JS show/hide).
+      Field lama `nilai`/`status` (dropdown A/B/C, Lancar/Cukup/Perlu Perbaikan) **harus dihapus**
+      dari form ini.
+- [ ] `application/views/penilaian/index.php` — modal koreksi guru: sama seperti di atas, ganti
+      dropdown `nilai`/`status` lama dengan field baru. **Skor & keterangan idealnya tidak diinput
+      manual** — tampilkan sebagai hasil kalkulasi read-only (mis. dihitung live via JS saat guru
+      mengubah jumlah kesalahan/kualitas, meniru logika `Poin_calculator` di sisi client, ATAU
+      dihitung ulang di server setelah submit dan ditampilkan di halaman berikutnya).
+- [ ] `application/views/riwayat/index.php` — filter dropdown `status` (Lancar/Cukup/Perlu Perbaikan)
+      perlu diganti jadi filter `keterangan` (L/CL/KL/TL) dan/atau `jenis_setoran`; badge warna nilai
+      (`A`/`B`/`C`) di tabel perlu diganti jadi tampilan `skor` numerik + badge `keterangan`.
+- [ ] `application/views/dashboard/index.php` — cek ulang label "Lancar/Cukup/Perlu Perbaikan" di
+      kartu statistik, sesuaikan teksnya dengan kategori baru (`setoran_perbaikan` sekarang
+      menggabungkan `KL`+`TL`, bukan cuma "Perlu Perbaikan" tunggal).
+- [ ] `application/views/progress/index.php` & `application/views/leaderboard/index.php` — belum
+      dicek apakah ada tampilan nilai A/B/C yang perlu disesuaikan (perlu audit ulang).
+
+**Lain-lain (belum dikerjakan):**
+- [ ] Testing end-to-end: belum ada verifikasi PHP syntax otomatis maupun uji jalan nyata terhadap
+      seluruh perubahan di atas.
+- [ ] Pertimbangkan menambahkan validasi JS di form Setoran/Penilaian: field `jumlah_kesalahan`
+      harus angka non-negatif, field `hasil_qc` wajib muncul & required hanya saat
+      `jenis_setoran=qc` dipilih (show/hide dinamis).
+- [ ] `INSTALLATION.md` sebaiknya diberi catatan: instalasi BARU cukup `tahfidzcms.sql`; instalasi
+      **existing** yang upgrade dari versi lama wajib jalankan `migration_kriteria_penilaian.sql`
+      secara manual (skrip installer otomatis TIDAK menjalankan file migrasi ini).

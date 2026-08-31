@@ -3,29 +3,90 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
  * Poin_calculator — Library logika murni (testable, tanpa dependensi DB langsung)
- * untuk kalkulasi poin hafalan dan penentuan tingkatan badge siswa.
+ * untuk kalkulasi penilaian hafalan, poin, dan badge siswa.
  *
- * Diadaptasi dari aturan bisnis prototipe:
- * - Nilai Tajwid/Dasar: A = 100 poin, B = 75 poin, C = 50 poin
- * - Status Kelancaran: Lancar = +20 poin, Cukup = +10 poin, Perlu Perbaikan = 0 poin
- * - Tingkatan Badge:
- *     < 500       : Pemula
- *     500 - 1499  : Mujahid
- *     1500 - 2999 : Hafidz Muda
- *     >= 3000     : Bintang Tahfidz
+ * Aturan bisnis diadaptasi dari dokumen resmi "KRITERIA PENILAIAN TAHFIDZ"
+ * (Ziyadah / Muroja'ah / Quality Control):
+ *
+ * 1. Guru menginput `jumlah_kesalahan` (hasil simakan) + `jenis_setoran`.
+ *    -> Sistem menentukan `keterangan` (L / CL / KL / TL) dari ambang batas
+ *       kesalahan yang BERBEDA per jenis setoran (lihat KETERANGAN_THRESHOLDS).
+ * 2. Guru menginput `kualitas_bacaan` (baik / kurang_baik) — penilaian
+ *    Makhraj, Tajwid, Sifatul Huruf.
+ *    -> Sistem menentukan `skor` (100/95/90/85/80/75/60) dari kombinasi
+ *       keterangan + kualitas_bacaan (lihat SKOR_MATRIX).
+ * 3. Khusus jenis_setoran = 'qc', guru WAJIB mengisi `hasil_qc` secara
+ *    manual ('layak_tasmi' / 'belum_layak') — keputusan ini murni judgment
+ *    guru penguji, tidak ada rumus otomatis di dokumen sumber.
+ * 4. Poin leaderboard = skor apa adanya (1 poin per 1 skor), sama rata
+ *    untuk ketiga jenis setoran (tidak ada bobot/bonus ekstra untuk QC).
+ *
+ * Skor "<70" pada dokumen disimpan sebagai angka tetap 60, supaya tetap
+ * bisa diurutkan/dirata-rata secara numerik.
  */
 class Poin_calculator
 {
-	const NILAI_POIN = array(
-		'A' => 100,
-		'B' => 75,
-		'C' => 50,
+	/**
+	 * Ambang batas jumlah kesalahan -> kode keterangan (L/CL/KL/TL),
+	 * berbeda satuan cakupan per jenis setoran:
+	 *   - ziyadah  : dihitung per HALAMAN
+	 *   - murojaah : dihitung per JUZ
+	 *   - qc       : dihitung per 2 HALAMAN
+	 *
+	 * Format tiap baris: array('max' => batas_atas_inklusif, 'kode' => ...)
+	 * Baris terakhir tiap jenis wajib 'max' => NULL (menangkap sisanya / TL).
+	 */
+	const KETERANGAN_THRESHOLDS = array(
+		'ziyadah' => array(
+			array('max' => 0,    'kode' => 'L'),
+			array('max' => 1,    'kode' => 'CL'),
+			array('max' => 2,    'kode' => 'KL'),
+			array('max' => NULL, 'kode' => 'TL'),
+		),
+		'murojaah' => array(
+			array('max' => 0,    'kode' => 'L'),
+			array('max' => 5,    'kode' => 'CL'),
+			array('max' => 10,   'kode' => 'KL'),
+			array('max' => NULL, 'kode' => 'TL'),
+		),
+		'qc' => array(
+			array('max' => 0,    'kode' => 'L'),
+			array('max' => 1,    'kode' => 'CL'),
+			array('max' => 2,    'kode' => 'KL'),
+			array('max' => NULL, 'kode' => 'TL'),
+		),
 	);
 
-	const STATUS_BONUS = array(
-		'Lancar'          => 20,
-		'Cukup'           => 10,
-		'Perlu Perbaikan' => 0,
+	/** Label lengkap tiap kode keterangan, untuk ditampilkan di UI. */
+	const KETERANGAN_LABEL = array(
+		'L'  => 'Lancar (Tidak Ada Kesalahan)',
+		'CL' => 'Cukup Lancar',
+		'KL' => 'Kurang Lancar',
+		'TL' => 'Tidak Lancar',
+	);
+
+	/**
+	 * Matriks skor dari kombinasi keterangan (L/CL/KL) + kualitas_bacaan.
+	 * TL selalu bernilai 60 (mewakili "<70") terlepas dari kualitas bacaan,
+	 * karena dokumen sumber tidak memecah TL berdasarkan kualitas.
+	 */
+	const SKOR_MATRIX = array(
+		'L'  => array('baik' => 100, 'kurang_baik' => 95),
+		'CL' => array('baik' => 90,  'kurang_baik' => 85),
+		'KL' => array('baik' => 80,  'kurang_baik' => 75),
+		'TL' => array('baik' => 60,  'kurang_baik' => 60),
+	);
+
+	/** Label jenis setoran untuk dropdown & tampilan. */
+	const JENIS_SETORAN_LABEL = array(
+		'ziyadah'  => 'Ziyadah (Hafalan Baru)',
+		'murojaah' => "Muroja'ah (Mengulang Hafalan)",
+		'qc'       => 'Quality Control',
+	);
+
+	const HASIL_QC_LABEL = array(
+		'layak_tasmi'  => "Layak Tasmi'",
+		'belum_layak'  => "Belum Layak Tasmi' / Mengulang",
 	);
 
 	const BADGE_LEVELS = array(
@@ -36,18 +97,68 @@ class Poin_calculator
 	);
 
 	/**
-	 * Hitung poin per setoran berdasarkan nilai dan status kelancaran.
+	 * Tentukan kode keterangan (L/CL/KL/TL) dari jumlah kesalahan dan
+	 * jenis setoran, sesuai ambang batas KETERANGAN_THRESHOLDS.
 	 *
-	 * @param string $nilai  'A' | 'B' | 'C'
-	 * @param string $status 'Lancar' | 'Cukup' | 'Perlu Perbaikan'
+	 * @param int    $jumlah_kesalahan
+	 * @param string $jenis_setoran 'ziyadah' | 'murojaah' | 'qc'
+	 * @return string Kode keterangan: 'L' | 'CL' | 'KL' | 'TL'
+	 */
+	public function hitung_keterangan($jumlah_kesalahan, $jenis_setoran)
+	{
+		$jumlah_kesalahan = max(0, (int) $jumlah_kesalahan);
+
+		$thresholds = isset(self::KETERANGAN_THRESHOLDS[$jenis_setoran])
+			? self::KETERANGAN_THRESHOLDS[$jenis_setoran]
+			: self::KETERANGAN_THRESHOLDS['ziyadah']; // fallback aman
+
+		foreach ($thresholds as $row) {
+			if ($row['max'] === NULL || $jumlah_kesalahan <= $row['max']) {
+				return $row['kode'];
+			}
+		}
+
+		return 'TL'; // unreachable secara normal, jaga-jaga saja
+	}
+
+	/**
+	 * Tentukan skor akhir (100/95/90/85/80/75/60) dari kode keterangan
+	 * dan kualitas bacaan (Makhraj/Tajwid/Sifatul Huruf).
+	 *
+	 * @param string $keterangan     'L' | 'CL' | 'KL' | 'TL'
+	 * @param string $kualitas_bacaan 'baik' | 'kurang_baik'
 	 * @return int
 	 */
-	public function hitung_poin($nilai, $status)
+	public function hitung_skor($keterangan, $kualitas_bacaan)
 	{
-		$base_poin = isset(self::NILAI_POIN[$nilai]) ? self::NILAI_POIN[$nilai] : 0;
-		$bonus     = isset(self::STATUS_BONUS[$status]) ? self::STATUS_BONUS[$status] : 0;
+		if (! isset(self::SKOR_MATRIX[$keterangan])) {
+			return 0;
+		}
 
-		return $base_poin + $bonus;
+		$kualitas_bacaan = ($kualitas_bacaan === 'baik') ? 'baik' : 'kurang_baik';
+
+		return self::SKOR_MATRIX[$keterangan][$kualitas_bacaan];
+	}
+
+	/**
+	 * Helper gabungan: dari input mentah guru (jumlah kesalahan, jenis
+	 * setoran, kualitas bacaan) langsung hasilkan keterangan + skor + poin.
+	 *
+	 * @param int    $jumlah_kesalahan
+	 * @param string $jenis_setoran
+	 * @param string $kualitas_bacaan
+	 * @return array{keterangan: string, skor: int, poin: int}
+	 */
+	public function nilai_setoran($jumlah_kesalahan, $jenis_setoran, $kualitas_bacaan)
+	{
+		$keterangan = $this->hitung_keterangan($jumlah_kesalahan, $jenis_setoran);
+		$skor       = $this->hitung_skor($keterangan, $kualitas_bacaan);
+
+		return array(
+			'keterangan' => $keterangan,
+			'skor'       => $skor,
+			'poin'       => $skor, // poin = skor apa adanya, sama rata semua jenis setoran
+		);
 	}
 
 	/**

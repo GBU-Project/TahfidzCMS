@@ -24,11 +24,12 @@ class Setoran extends MY_API_Controller
 	 */
 	public function index()
 	{
-		$kelas_id = $this->input->get('kelas_id');
-		$nisn     = $this->input->get('nisn');
-		$status   = $this->input->get('status');
-		$limit    = $this->input->get('limit') ? (int) $this->input->get('limit') : 50;
-		$offset   = $this->input->get('offset') ? (int) $this->input->get('offset') : 0;
+		$kelas_id      = $this->input->get('kelas_id');
+		$nisn          = $this->input->get('nisn');
+		$keterangan    = $this->input->get('keterangan');
+		$jenis_setoran = $this->input->get('jenis_setoran');
+		$limit         = $this->input->get('limit') ? (int) $this->input->get('limit') : 50;
+		$offset        = $this->input->get('offset') ? (int) $this->input->get('offset') : 0;
 
 		// Jika role siswa, batasi HANYA ke data miliknya sendiri
 		if ($this->is_siswa()) {
@@ -42,10 +43,11 @@ class Setoran extends MY_API_Controller
 		}
 
 		$filter = array(
-			'kelas_id'  => $kelas_id,
-			'kelas_ids' => $this->is_guru() ? $this->kelas_diizinkan : array(),
-			'nisn'      => $nisn,
-			'status'    => $status,
+			'kelas_id'      => $kelas_id,
+			'kelas_ids'     => $this->is_guru() ? $this->kelas_diizinkan : array(),
+			'nisn'          => $nisn,
+			'keterangan'    => $keterangan,
+			'jenis_setoran' => $jenis_setoran,
 		);
 
 		$data = $this->Setoran_model->get_all($filter, $limit, $offset);
@@ -71,30 +73,37 @@ class Setoran extends MY_API_Controller
 	{
 		$this->require_role(array('admin', 'guru'));
 
-		$nisn        = $this->input->post('nisn', TRUE);
-		$tanggal     = $this->input->post('tanggal', TRUE) ?: date('Y-m-d');
-		$waktu       = $this->input->post('waktu', TRUE) ?: date('H:i:s');
-		$juz         = (int) $this->input->post('juz');
-		$surat       = $this->input->post('surat', TRUE);
-		$ayat_dari   = (int) $this->input->post('ayat_dari');
-		$ayat_sampai = (int) $this->input->post('ayat_sampai');
-		$nilai       = strtoupper(trim($this->input->post('nilai', TRUE)));
-		$status      = trim($this->input->post('status', TRUE));
-		$catatan     = $this->input->post('catatan', TRUE) ?: null;
-		$durasi_audio= $this->input->post('durasi_audio');
+		$nisn             = $this->input->post('nisn', TRUE);
+		$tanggal          = $this->input->post('tanggal', TRUE) ?: date('Y-m-d');
+		$waktu            = $this->input->post('waktu', TRUE) ?: date('H:i:s');
+		$juz              = (int) $this->input->post('juz');
+		$surat            = $this->input->post('surat', TRUE);
+		$ayat_dari        = (int) $this->input->post('ayat_dari');
+		$ayat_sampai      = (int) $this->input->post('ayat_sampai');
+		$jenis_setoran    = strtolower(trim($this->input->post('jenis_setoran', TRUE)));
+		$jumlah_kesalahan = (int) $this->input->post('jumlah_kesalahan');
+		$kualitas_bacaan  = strtolower(trim($this->input->post('kualitas_bacaan', TRUE)));
+		$hasil_qc         = $this->input->post('hasil_qc', TRUE);
+		$catatan          = $this->input->post('catatan', TRUE) ?: null;
+		$durasi_audio     = $this->input->post('durasi_audio');
 
-		if (! $nisn || ! $juz || ! $surat || ! $ayat_dari || ! $ayat_sampai || ! $nilai || ! $status) {
-			$this->json_error('Semua field wajib diisi: nisn, juz, surat, ayat_dari, ayat_sampai, nilai, status.', 422);
+		if (! $nisn || ! $juz || ! $surat || ! $ayat_dari || ! $ayat_sampai || ! $jenis_setoran || $this->input->post('jumlah_kesalahan') === NULL || ! $kualitas_bacaan) {
+			$this->json_error('Semua field wajib diisi: nisn, juz, surat, ayat_dari, ayat_sampai, jenis_setoran, jumlah_kesalahan, kualitas_bacaan.', 422);
 			return;
 		}
 
-		if (! in_array($nilai, array('A', 'B', 'C'), TRUE)) {
-			$this->json_error('Nilai harus A, B, atau C.', 422);
+		if (! in_array($jenis_setoran, array('ziyadah', 'murojaah', 'qc'), TRUE)) {
+			$this->json_error('jenis_setoran harus: ziyadah, murojaah, atau qc.', 422);
 			return;
 		}
 
-		if (! in_array($status, array('Lancar', 'Cukup', 'Perlu Perbaikan'), TRUE)) {
-			$this->json_error('Status harus: Lancar, Cukup, atau Perlu Perbaikan.', 422);
+		if (! in_array($kualitas_bacaan, array('baik', 'kurang_baik'), TRUE)) {
+			$this->json_error('kualitas_bacaan harus: baik atau kurang_baik.', 422);
+			return;
+		}
+
+		if ($jenis_setoran === 'qc' && ! in_array($hasil_qc, array('layak_tasmi', 'belum_layak'), TRUE)) {
+			$this->json_error('hasil_qc wajib diisi (layak_tasmi / belum_layak) untuk jenis_setoran qc.', 422);
 			return;
 		}
 
@@ -116,6 +125,11 @@ class Setoran extends MY_API_Controller
 			return;
 		}
 
+		// Keterangan (L/CL/KL/TL) & skor dihitung OTOMATIS oleh sistem,
+		// bukan dikirim langsung oleh client, supaya penilaian konsisten
+		// dan sesuai KRITERIA_PENILAIAN_TAHFIDZ.docx.
+		$hasil_nilai = $this->poin_calculator->nilai_setoran($jumlah_kesalahan, $jenis_setoran, $kualitas_bacaan);
+
 		$data_setoran = array(
 			// 'kode_setoran' sengaja TIDAK di-generate di sini — lihat
 			// komentar di Setoran_model::create() soal race condition.
@@ -127,8 +141,13 @@ class Setoran extends MY_API_Controller
 			'surat'              => $surat,
 			'ayat_dari'          => $ayat_dari,
 			'ayat_sampai'        => $ayat_sampai,
-			'nilai'              => $nilai,
-			'status'             => $status,
+			'jenis_setoran'      => $jenis_setoran,
+			'jumlah_kesalahan'   => $jumlah_kesalahan,
+			'kualitas_bacaan'    => $kualitas_bacaan,
+			'keterangan'         => $hasil_nilai['keterangan'],
+			'skor'               => $hasil_nilai['skor'],
+			'poin'               => $hasil_nilai['poin'],
+			'hasil_qc'           => ($jenis_setoran === 'qc') ? $hasil_qc : null,
 			'catatan'            => $catatan,
 			'audio_bukti'        => $upload['path'],
 			'durasi_audio'       => ! empty($durasi_audio) ? (int) $durasi_audio : null,

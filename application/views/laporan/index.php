@@ -6,7 +6,7 @@
 	<div class="flex items-center gap-3">
 		<a href="<?php echo site_url('laporan/export?' . http_build_query(array('kelas_id' => $selected_kelas, 'tanggal_awal' => $tanggal_awal, 'tanggal_akhir' => $tanggal_akhir))); ?>" 
 		   class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl transition shadow-sm">
-			<i class="fa-solid fa-file-excel"></i> Export ke Excel (.xls)
+			<i class="fa-solid fa-file-excel"></i> Export ke Excel (.xlsx)
 		</a>
 	</div>
 </div>
@@ -55,9 +55,10 @@
 					<th class="px-5 py-3.5">Santri / Siswa</th>
 					<th class="px-5 py-3.5">Kelas</th>
 					<th class="px-5 py-3.5 text-center">Total Setoran</th>
-					<th class="px-5 py-3.5 text-center">Lancar</th>
-					<th class="px-5 py-3.5 text-center">Cukup</th>
-					<th class="px-5 py-3.5 text-center">Perlu Perbaikan</th>
+					<th class="px-5 py-3.5 text-center">Lancar (L)</th>
+					<th class="px-5 py-3.5 text-center">Cukup (CL)</th>
+					<th class="px-5 py-3.5 text-center">Kurang (KL)</th>
+					<th class="px-5 py-3.5 text-center">Tidak Lancar (TL)</th>
 					<th class="px-5 py-3.5 text-center">Setoran Terakhir</th>
 					<th class="px-5 py-3.5 text-right">Poin Periode Ini</th>
 				</tr>
@@ -65,7 +66,7 @@
 			<tbody class="divide-y divide-gray-100">
 				<?php if (empty($rekap_data)): ?>
 					<tr>
-						<td colspan="8" class="text-center py-10 text-gray-400 italic">Tidak ada rekaman setoran pada periode ini.</td>
+						<td colspan="9" class="text-center py-10 text-gray-400 italic">Tidak ada rekaman setoran pada periode ini.</td>
 					</tr>
 				<?php else: ?>
 					<?php foreach ($rekap_data as $row): ?>
@@ -86,13 +87,18 @@
 								</span>
 							</td>
 							<td class="px-5 py-4 whitespace-nowrap text-center">
+								<span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+									<?php echo $row->total_cukup_lancar; ?>
+								</span>
+							</td>
+							<td class="px-5 py-4 whitespace-nowrap text-center">
 								<span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700">
-									<?php echo $row->total_cukup; ?>
+									<?php echo $row->total_kurang_lancar; ?>
 								</span>
 							</td>
 							<td class="px-5 py-4 whitespace-nowrap text-center">
 								<span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700">
-									<?php echo $row->total_perbaikan; ?>
+									<?php echo $row->total_tidak_lancar; ?>
 								</span>
 							</td>
 							<td class="px-5 py-4 whitespace-nowrap text-center text-xs text-gray-500">

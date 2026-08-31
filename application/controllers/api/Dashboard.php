@@ -50,9 +50,10 @@ class Dashboard extends MY_API_Controller
 			$data['total_siswa']       = $this->Siswa_model->count_siswa($kelas_ids);
 			$data['total_setoran']     = $this->Setoran_model->count_setoran($kelas_ids);
 			$data['setoran_bulan_ini'] = $this->Setoran_model->count_setoran_bulan_ini($kelas_ids);
-			$data['setoran_lancar']    = $this->Setoran_model->count_setoran($kelas_ids, 'Lancar');
-			$data['setoran_cukup']     = $this->Setoran_model->count_setoran($kelas_ids, 'Cukup');
-			$data['setoran_perbaikan'] = $this->Setoran_model->count_setoran($kelas_ids, 'Perlu Perbaikan');
+			$data['setoran_lancar']    = $this->Setoran_model->count_setoran($kelas_ids, 'L');
+			$data['setoran_cukup']     = $this->Setoran_model->count_setoran($kelas_ids, 'CL');
+			$data['setoran_perbaikan'] = $this->Setoran_model->count_setoran($kelas_ids, 'KL')
+			                            + $this->Setoran_model->count_setoran($kelas_ids, 'TL');
 			$data['top_siswa']         = $this->Siswa_model->get_leaderboard(null, 5, $kelas_ids);
 			$data['riwayat_terbaru']   = $this->Setoran_model->get_all(array('kelas_ids' => $kelas_ids), 7);
 		}

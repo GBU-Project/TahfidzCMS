@@ -51,7 +51,7 @@
 					<th class="px-4 py-3.5">Kode & Tanggal</th>
 					<th class="px-4 py-3.5">Siswa & Kelas</th>
 					<th class="px-4 py-3.5">Hafalan</th>
-					<th class="px-4 py-3.5">Nilai & Status</th>
+					<th class="px-4 py-3.5">Jenis & Penilaian</th>
 					<th class="px-4 py-3.5">Poin</th>
 					<th class="px-4 py-3.5">Audio Bukti</th>
 					<th class="px-4 py-3.5 text-right">Aksi</th>
@@ -84,16 +84,34 @@
 							<div class="text-xs text-gray-500">Juz <?php echo $s->juz; ?> : Ayat <?php echo $s->ayat_dari; ?> - <?php echo $s->ayat_sampai; ?></div>
 						</td>
 						<td class="px-4 py-3.5">
-							<div class="flex items-center gap-1.5 mb-1">
-								<span class="px-2 py-0.5 rounded text-xs font-bold <?php echo $s->nilai === 'A' ? 'bg-emerald-100 text-emerald-800' : ($s->nilai === 'B' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'); ?>">
-									Nilai <?php echo $s->nilai; ?>
+							<div class="flex items-center gap-1.5 mb-1 flex-wrap">
+								<?php
+									$badge_bg = 'bg-emerald-100 text-emerald-800';
+									if ($s->keterangan === 'CL') $badge_bg = 'bg-blue-100 text-blue-800';
+									elseif ($s->keterangan === 'KL') $badge_bg = 'bg-amber-100 text-amber-800';
+									elseif ($s->keterangan === 'TL') $badge_bg = 'bg-rose-100 text-rose-800';
+
+									$jenis_label = ucfirst($s->jenis_setoran);
+									if ($s->jenis_setoran === 'qc') $jenis_label = 'Quality Control';
+									elseif ($s->jenis_setoran === 'murojaah') $jenis_label = "Muroja'ah";
+								?>
+								<span class="px-2 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-700">
+									<?php echo $jenis_label; ?>
 								</span>
-								<span class="px-2 py-0.5 rounded text-xs <?php echo $s->status === 'Lancar' ? 'bg-green-50 text-green-700' : ($s->status === 'Cukup' ? 'bg-yellow-50 text-yellow-700' : 'bg-rose-50 text-rose-700'); ?>">
-									<?php echo $s->status; ?>
+								<span class="px-2 py-0.5 rounded text-xs font-bold <?php echo $badge_bg; ?>">
+									<?php echo $s->keterangan; ?> (Skor: <?php echo $s->skor; ?>)
 								</span>
+								<?php if ($s->jenis_setoran === 'qc' && ! empty($s->hasil_qc)): ?>
+									<span class="px-2 py-0.5 rounded text-[11px] font-semibold <?php echo $s->hasil_qc === 'layak_tasmi' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'; ?>">
+										<?php echo $s->hasil_qc === 'layak_tasmi' ? "Layak Tasmi'" : "Belum Layak"; ?>
+									</span>
+								<?php endif; ?>
+							</div>
+							<div class="text-[11px] text-gray-400">
+								Salah: <?php echo $s->jumlah_kesalahan; ?> &bull; Bacaan: <?php echo $s->kualitas_bacaan === 'baik' ? 'Baik' : 'Kurang Baik'; ?>
 							</div>
 							<?php if (! empty($s->catatan)): ?>
-								<div class="text-xs text-gray-400 italic truncate max-w-xs" title="<?php echo htmlspecialchars($s->catatan); ?>">
+								<div class="text-xs text-gray-400 italic truncate max-w-xs mt-0.5" title="<?php echo htmlspecialchars($s->catatan); ?>">
 									"<?php echo htmlspecialchars($s->catatan); ?>"
 								</div>
 							<?php endif; ?>

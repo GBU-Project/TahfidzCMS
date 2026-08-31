@@ -82,6 +82,7 @@ class Laporan extends MY_Controller
 
 		$setoran_list = $this->Setoran_model->get_all($filter);
 		$this->load->library('Excel_exporter');
+		$this->load->library('Poin_calculator');
 
 		$headers = array(
 			'No',
@@ -95,8 +96,12 @@ class Laporan extends MY_Controller
 			'Surat',
 			'Ayat Dari',
 			'Ayat Sampai',
-			'Nilai Tajwid',
-			'Status Kelancaran',
+			'Jenis Setoran',
+			'Jumlah Kesalahan',
+			'Kualitas Bacaan',
+			'Keterangan',
+			'Skor',
+			'Hasil QC',
 			'Poin Diperoleh',
 			'Guru Pengoreksi',
 			'Catatan'
@@ -117,8 +122,12 @@ class Laporan extends MY_Controller
 				$row->surat,
 				$row->ayat_dari,
 				$row->ayat_sampai,
-				$row->nilai,
-				$row->status,
+				isset(Poin_calculator::JENIS_SETORAN_LABEL[$row->jenis_setoran]) ? Poin_calculator::JENIS_SETORAN_LABEL[$row->jenis_setoran] : $row->jenis_setoran,
+				$row->jumlah_kesalahan,
+				$row->kualitas_bacaan === 'baik' ? 'Baik' : 'Kurang Baik',
+				$row->keterangan,
+				$row->skor,
+				$row->hasil_qc ? (isset(Poin_calculator::HASIL_QC_LABEL[$row->hasil_qc]) ? Poin_calculator::HASIL_QC_LABEL[$row->hasil_qc] : $row->hasil_qc) : '-',
 				$row->poin,
 				$row->nama_guru ?: '-',
 				$row->catatan ?: '-'

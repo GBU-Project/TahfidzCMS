@@ -20,13 +20,13 @@ class Riwayat extends MY_Controller
 
 		$kelas_id      = $this->input->get('kelas_id');
 		$nisn          = $this->input->get('nisn');
-		$status        = $this->input->get('status');
+		$keterangan    = $this->input->get('keterangan');
 		$tanggal_awal  = $this->input->get('tanggal_awal');
 		$tanggal_akhir = $this->input->get('tanggal_akhir');
 		$search        = $this->input->get('q');
 
 		$filter = array(
-			'status'        => $status,
+			'keterangan'    => $keterangan,
 			'tanggal_awal'  => $tanggal_awal,
 			'tanggal_akhir' => $tanggal_akhir,
 			'search'        => $search,
@@ -110,7 +110,7 @@ class Riwayat extends MY_Controller
 			'siswa_list'     => $siswa_list,
 			'selected_kelas' => $kelas_id,
 			'selected_nisn'  => $nisn,
-			'selected_status'=> $status,
+			'selected_keterangan'=> $keterangan,
 			'tanggal_awal'   => $tanggal_awal,
 			'tanggal_akhir'  => $tanggal_akhir,
 			'search'         => $search,

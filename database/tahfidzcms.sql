@@ -133,9 +133,19 @@ CREATE TABLE `setoran` (
   `surat`             VARCHAR(50)     NOT NULL,
   `ayat_dari`        SMALLINT UNSIGNED NOT NULL,
   `ayat_sampai`      SMALLINT UNSIGNED NOT NULL,
-  `nilai`            ENUM('A','B','C') NOT NULL,
-  `status`           ENUM('Lancar','Cukup','Perlu Perbaikan') NOT NULL,
-  `poin`             INT             NOT NULL DEFAULT 0,
+  `jenis_setoran`    ENUM('ziyadah','murojaah','qc') NOT NULL DEFAULT 'ziyadah'
+                       COMMENT 'Menentukan ambang batas kesalahan yang dipakai: ziyadah=per halaman, murojaah=per juz, qc=per 2 halaman',
+  `jumlah_kesalahan` SMALLINT UNSIGNED NOT NULL DEFAULT 0
+                       COMMENT 'Input manual guru saat simak; dasar perhitungan otomatis kolom keterangan',
+  `kualitas_bacaan`  ENUM('baik','kurang_baik') NOT NULL DEFAULT 'baik'
+                       COMMENT 'Kualitas Makhraj/Tajwid/Sifatul Huruf; dasar perhitungan otomatis kolom skor',
+  `keterangan`       ENUM('L','CL','KL','TL') NOT NULL
+                       COMMENT 'Dihitung otomatis dari jumlah_kesalahan + jenis_setoran, lihat Poin_calculator::hitung_keterangan()',
+  `skor`             TINYINT UNSIGNED NOT NULL
+                       COMMENT 'Dihitung otomatis dari keterangan + kualitas_bacaan (100/95/90/85/80/75/60), lihat Poin_calculator::hitung_skor()',
+  `hasil_qc`         ENUM('layak_tasmi','belum_layak') NULL
+                       COMMENT 'Wajib diisi manual oleh guru HANYA jika jenis_setoran = qc; NULL untuk ziyadah/murojaah',
+  `poin`             INT             NOT NULL DEFAULT 0 COMMENT 'Poin leaderboard = skor apa adanya, sama rata semua jenis setoran',
   `catatan`          TEXT            NULL,
   `audio_bukti`      VARCHAR(255)    NULL COMMENT 'Path file rekaman audio bukti setoran, mis. uploads/setoran_audio/xxx.mp3',
   `durasi_audio`     SMALLINT UNSIGNED NULL COMMENT 'Durasi rekaman dalam detik',
@@ -147,6 +157,7 @@ CREATE TABLE `setoran` (
   KEY `idx_kelas` (`kelas_id`),
   KEY `idx_tanggal` (`tanggal`),
   KEY `idx_guru` (`guru_pengoreksi_id`),
+  KEY `idx_jenis_setoran` (`jenis_setoran`),
   CONSTRAINT `fk_setoran_siswa` FOREIGN KEY (`nisn`) REFERENCES `siswa`(`nisn`) ON DELETE CASCADE,
   CONSTRAINT `fk_setoran_kelas` FOREIGN KEY (`kelas_id`) REFERENCES `kelas`(`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_setoran_guru`  FOREIGN KEY (`guru_pengoreksi_id`) REFERENCES `users`(`id`) ON DELETE SET NULL

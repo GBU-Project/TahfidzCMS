@@ -160,16 +160,16 @@
 				</h2>
 				<div class="grid grid-cols-3 gap-3 text-center mb-6">
 					<div class="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
-						<div class="text-xs font-medium text-emerald-700 mb-1">Lancar</div>
+						<div class="text-xs font-medium text-emerald-700 mb-1">Lancar (L)</div>
 						<div class="text-xl font-bold text-emerald-800"><?php echo number_format($setoran_lancar); ?></div>
 					</div>
-					<div class="p-4 bg-amber-50 rounded-xl border border-amber-100">
-						<div class="text-xs font-medium text-amber-700 mb-1">Cukup</div>
-						<div class="text-xl font-bold text-amber-800"><?php echo number_format($setoran_cukup); ?></div>
+					<div class="p-4 bg-blue-50 rounded-xl border border-blue-100">
+						<div class="text-xs font-medium text-blue-700 mb-1">Cukup Lancar (CL)</div>
+						<div class="text-xl font-bold text-blue-800"><?php echo number_format($setoran_cukup); ?></div>
 					</div>
-					<div class="p-4 bg-red-50 rounded-xl border border-red-100">
-						<div class="text-xs font-medium text-red-700 mb-1">Perlu Perbaikan</div>
-						<div class="text-xl font-bold text-red-800"><?php echo number_format($setoran_perbaikan); ?></div>
+					<div class="p-4 bg-amber-50 rounded-xl border border-amber-100">
+						<div class="text-xs font-medium text-amber-700 mb-1">Kurang / Tidak Lancar</div>
+						<div class="text-xl font-bold text-amber-800"><?php echo number_format($setoran_perbaikan); ?></div>
 					</div>
 				</div>
 			</div>
@@ -209,8 +209,8 @@
 					<th class="px-5 py-3">Santri</th>
 					<th class="px-5 py-3">Surat & Ayat</th>
 					<th class="px-5 py-3">Juz</th>
-					<th class="px-5 py-3">Kelancaran</th>
-					<th class="px-5 py-3">Nilai</th>
+					<th class="px-5 py-3">Jenis & Predikat</th>
+					<th class="px-5 py-3">Skor</th>
 					<th class="px-5 py-3">Poin</th>
 					<th class="px-5 py-3">Pengoreksi</th>
 				</tr>
@@ -238,16 +238,23 @@
 							<td class="px-5 py-3.5 whitespace-nowrap font-medium text-gray-700">Juz <?php echo $row->juz; ?></td>
 							<td class="px-5 py-3.5 whitespace-nowrap">
 								<?php
-									$badge_class = 'bg-gray-100 text-gray-700';
-									if ($row->status === 'Lancar') $badge_class = 'bg-emerald-100 text-emerald-700';
-									elseif ($row->status === 'Cukup') $badge_class = 'bg-amber-100 text-amber-700';
-									elseif ($row->status === 'Perlu Perbaikan') $badge_class = 'bg-red-100 text-red-700';
+									$badge_class = 'bg-emerald-100 text-emerald-700';
+									if ($row->keterangan === 'CL') $badge_class = 'bg-blue-100 text-blue-700';
+									elseif ($row->keterangan === 'KL') $badge_class = 'bg-amber-100 text-amber-700';
+									elseif ($row->keterangan === 'TL') $badge_class = 'bg-red-100 text-red-700';
+
+									$jenis_label = ucfirst($row->jenis_setoran);
+									if ($row->jenis_setoran === 'qc') $jenis_label = 'Quality Control';
+									elseif ($row->jenis_setoran === 'murojaah') $jenis_label = "Muroja'ah";
 								?>
+								<span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-600 mr-1">
+									<?php echo $jenis_label; ?>
+								</span>
 								<span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold <?php echo $badge_class; ?>">
-									<?php echo $row->status; ?>
+									<?php echo $row->keterangan; ?>
 								</span>
 							</td>
-							<td class="px-5 py-3.5 whitespace-nowrap font-bold text-gray-800"><?php echo $row->nilai; ?></td>
+							<td class="px-5 py-3.5 whitespace-nowrap font-bold text-gray-800"><?php echo $row->skor; ?></td>
 							<td class="px-5 py-3.5 whitespace-nowrap font-bold text-emerald-600">+<?php echo $row->poin; ?></td>
 							<td class="px-5 py-3.5 whitespace-nowrap text-xs text-gray-500"><?php echo htmlspecialchars($row->nama_guru ?: '-'); ?></td>
 						</tr>

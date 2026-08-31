@@ -102,13 +102,14 @@ class Setoran extends MY_Controller
 		$kelas_list = $this->is_guru() ? $this->Kelas_model->get_by_ids($this->kelas_diizinkan) : $this->Kelas_model->get_all();
 
 		$data = array(
-			'title'         => 'Input Setoran Baru',
-			'siswa_list'    => $siswa_list,
-			'kelas_list'    => $kelas_list,
-			'daftar_surat'  => $this->poin_calculator->get_daftar_surat(),
-			'auto_kode'     => $this->Setoran_model->generate_kode_setoran(),
-			'default_date'  => date('Y-m-d'),
-			'default_time'  => date('H:i'),
+			'title'              => 'Input Setoran Baru',
+			'siswa_list'         => $siswa_list,
+			'kelas_list'         => $kelas_list,
+			'daftar_surat'       => $this->poin_calculator->get_daftar_surat(),
+			'jenis_setoran_list' => Poin_calculator::JENIS_SETORAN_LABEL,
+			'auto_kode'          => $this->Setoran_model->generate_kode_setoran(),
+			'default_date'       => date('Y-m-d'),
+			'default_time'       => date('H:i'),
 		);
 
 		$this->render('setoran/form', $data);
@@ -126,8 +127,14 @@ class Setoran extends MY_Controller
 		$this->form_validation->set_rules('surat', 'Nama Surat', 'required|trim');
 		$this->form_validation->set_rules('ayat_dari', 'Ayat Dari', 'required|numeric|greater_than[0]');
 		$this->form_validation->set_rules('ayat_sampai', 'Ayat Sampai', 'required|numeric|greater_than_equal_to[' . $this->input->post('ayat_dari') . ']');
-		$this->form_validation->set_rules('nilai', 'Nilai Tajwid', 'required|in_list[A,B,C]');
-		$this->form_validation->set_rules('status', 'Status Kelancaran', 'required|in_list[Lancar,Cukup,Perlu Perbaikan]');
+		$this->form_validation->set_rules('jenis_setoran', 'Jenis Setoran', 'required|in_list[ziyadah,murojaah,qc]');
+		$this->form_validation->set_rules('jumlah_kesalahan', 'Jumlah Kesalahan', 'required|numeric|greater_than_equal_to[0]');
+		$this->form_validation->set_rules('kualitas_bacaan', 'Kualitas Bacaan', 'required|in_list[baik,kurang_baik]');
+
+		// hasil_qc wajib HANYA jika jenis_setoran = qc
+		if ($this->input->post('jenis_setoran') === 'qc') {
+			$this->form_validation->set_rules('hasil_qc', 'Hasil Quality Control', 'required|in_list[layak_tasmi,belum_layak]');
+		}
 
 		if ($this->form_validation->run() === FALSE) {
 			$this->session->set_flashdata('error', validation_errors());
@@ -161,6 +168,15 @@ class Setoran extends MY_Controller
 
 		$durasi_audio = $this->input->post('durasi_audio');
 
+		$jenis_setoran    = $this->input->post('jenis_setoran', TRUE);
+		$jumlah_kesalahan = (int) $this->input->post('jumlah_kesalahan');
+		$kualitas_bacaan  = $this->input->post('kualitas_bacaan', TRUE);
+
+		// Keterangan (L/CL/KL/TL) & skor dihitung OTOMATIS oleh sistem,
+		// bukan dipilih manual guru, supaya penilaian konsisten dan sesuai
+		// KRITERIA_PENILAIAN_TAHFIDZ.docx.
+		$hasil_nilai = $this->poin_calculator->nilai_setoran($jumlah_kesalahan, $jenis_setoran, $kualitas_bacaan);
+
 		$data_setoran = array(
 			// 'kode_setoran' sengaja TIDAK di-generate di sini — create()
 			// di Setoran_model menentukan kode final secara atomic berbasis
@@ -174,8 +190,13 @@ class Setoran extends MY_Controller
 			'surat'              => $this->input->post('surat', TRUE),
 			'ayat_dari'          => (int) $this->input->post('ayat_dari'),
 			'ayat_sampai'        => (int) $this->input->post('ayat_sampai'),
-			'nilai'              => $this->input->post('nilai', TRUE),
-			'status'             => $this->input->post('status', TRUE),
+			'jenis_setoran'      => $jenis_setoran,
+			'jumlah_kesalahan'   => $jumlah_kesalahan,
+			'kualitas_bacaan'    => $kualitas_bacaan,
+			'keterangan'         => $hasil_nilai['keterangan'],
+			'skor'               => $hasil_nilai['skor'],
+			'poin'               => $hasil_nilai['poin'],
+			'hasil_qc'           => ($jenis_setoran === 'qc') ? $this->input->post('hasil_qc', TRUE) : null,
 			'catatan'            => $this->input->post('catatan', TRUE) ?: null,
 			'audio_bukti'        => $upload['path'],
 			'durasi_audio'       => ! empty($durasi_audio) ? (int) $durasi_audio : null,

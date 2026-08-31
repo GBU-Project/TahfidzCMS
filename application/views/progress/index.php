@@ -95,7 +95,7 @@
 
 		<div class="flex items-center gap-4 mt-6 pt-4 border-t text-xs text-gray-500">
 			<div class="flex items-center gap-1.5">
-				<span class="w-3.5 h-3.5 rounded bg-emerald-500 inline-block"></span> Juz Sudah Disetor & Dinilai (Lancar/Cukup)
+				<span class="w-3.5 h-3.5 rounded bg-emerald-500 inline-block"></span> Juz Sudah Disetor & Lulus (Lancar / Cukup Lancar)
 			</div>
 			<div class="flex items-center gap-1.5">
 				<span class="w-3.5 h-3.5 rounded bg-gray-200 inline-block"></span> Juz Belum Disetorkan

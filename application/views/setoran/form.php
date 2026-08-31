@@ -89,41 +89,148 @@
 			</div>
 		</div>
 
-		<!-- Panel 3: Penilaian & Evaluasi Awal -->
+		<!-- Panel 3: Penilaian & Evaluasi Sesuai Standar Kriteria -->
 		<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
 			<h2 class="text-base font-semibold text-gray-800 mb-4 pb-2 border-b flex items-center gap-2">
-				<i class="fa-solid fa-star text-emerald-600"></i> Penilaian & Catatan
+				<i class="fa-solid fa-star text-emerald-600"></i> Kriteria Penilaian & Hasil Simak
 			</h2>
 
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 				<div>
-					<label class="block text-sm font-medium text-gray-700 mb-1">Nilai Tajwid & Makhraj <span class="text-red-500">*</span></label>
-					<select name="nilai" id="select-nilai" onchange="updateEstimatedPoin()" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
-						<option value="A">A (Sangat Baik / Mumtaz - 100 Poin)</option>
-						<option value="B" selected>B (Baik / Jayyid - 75 Poin)</option>
-						<option value="C">C (Cukup / Maqbul - 50 Poin)</option>
+					<label class="block text-sm font-medium text-gray-700 mb-1">Jenis Setoran <span class="text-red-500">*</span></label>
+					<select name="jenis_setoran" id="select-jenis-setoran" onchange="onJenisSetoranChange()" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
+						<?php foreach ($jenis_setoran_list as $val => $label): ?>
+							<option value="<?php echo $val; ?>" <?php echo ($val === 'ziyadah') ? 'selected' : ''; ?>>
+								<?php echo htmlspecialchars($label); ?>
+							</option>
+						<?php endforeach; ?>
 					</select>
+					<p id="help-jenis-setoran" class="text-xs text-gray-400 mt-1">Standar kesalahan dihitung per halaman</p>
 				</div>
 
 				<div>
-					<label class="block text-sm font-medium text-gray-700 mb-1">Status Kelancaran <span class="text-red-500">*</span></label>
-					<select name="status" id="select-status" onchange="updateEstimatedPoin()" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
-						<option value="Lancar" selected>Lancar (+20 Poin)</option>
-						<option value="Cukup">Cukup (+10 Poin)</option>
-						<option value="Perlu Perbaikan">Perlu Perbaikan (+0 Poin)</option>
+					<label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Kesalahan <span class="text-red-500">*</span></label>
+					<input type="number" name="jumlah_kesalahan" id="input-kesalahan" min="0" value="0" required oninput="updateEstimatedPoin()"
+						class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
+					<p class="text-xs text-gray-400 mt-1">Total salah makhraj, ayat lupa, atau waqaf</p>
+				</div>
+
+				<div>
+					<label class="block text-sm font-medium text-gray-700 mb-1">Kualitas Bacaan <span class="text-red-500">*</span></label>
+					<select name="kualitas_bacaan" id="select-kualitas" onchange="updateEstimatedPoin()" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
+						<option value="baik" selected>Baik (Makhraj, Tajwid & Sifatul Huruf Baik)</option>
+						<option value="kurang_baik">Kurang Baik (Tajwid / Sifat Kurang Pas)</option>
 					</select>
 				</div>
 
-				<div class="md:col-span-2">
-					<div class="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-sm flex items-center justify-between">
-						<span>Estimasi Perolehan Poin Setoran:</span>
-						<span id="label-estimasi-poin" class="font-bold text-lg">+95 Poin</span>
+				<div id="qc-wrapper" class="hidden md:col-span-3">
+					<div class="p-3.5 bg-blue-50/70 border border-blue-200 rounded-lg">
+						<label class="block text-sm font-medium text-blue-900 mb-1">Keputusan Uji Quality Control <span class="text-red-500">*</span></label>
+						<select name="hasil_qc" id="select-hasil-qc" class="w-full bg-white border border-blue-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500">
+							<option value="layak_tasmi">Layak Tasmi' (Lulus Uji & Berhak Maju Tasmi')</option>
+							<option value="belum_layak">Belum Layak Tasmi' / Perlu Mengulang</option>
+						</select>
+						<p class="text-xs text-blue-700 mt-1">Wajib ditentukan saat pengambilan data Quality Control (QC).</p>
 					</div>
 				</div>
 
-				<div class="md:col-span-2">
+				<!-- Live Result Preview -->
+				<div class="md:col-span-3">
+					<div class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+						<div class="flex items-center gap-3">
+							<div class="w-10 h-10 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm" id="badge-keterangan">
+								L
+							</div>
+							<div>
+								<div class="text-xs text-emerald-700 font-medium">Predikat Kelancaran & Rekomendasi:</div>
+								<div class="font-bold text-gray-900" id="label-keterangan">Lancar (Tidak Ada Kesalahan)</div>
+							</div>
+						</div>
+						<div class="flex items-center gap-6">
+							<div class="text-right">
+								<div class="text-xs text-emerald-700 font-medium">Skor Akhir & Poin:</div>
+								<div class="font-extrabold text-xl text-emerald-700" id="label-estimasi-poin">100 Poin</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Collapsible Cheat-Sheet / Panduan Standar Rubrik -->
+				<div class="md:col-span-3">
+					<div class="border border-amber-200 bg-amber-50/50 rounded-xl overflow-hidden text-xs text-gray-700">
+						<button type="button" onclick="togglePanduanRubrik()" class="w-full px-4 py-2.5 bg-amber-100/60 hover:bg-amber-100 font-semibold text-amber-900 flex items-center justify-between text-left transition">
+							<span class="flex items-center gap-2">
+								<i class="fa-solid fa-circle-info text-amber-600"></i> Panduan Standar Kriteria Penilaian & Toleransi Simak
+							</span>
+							<span id="icon-toggle-panduan" class="text-amber-700">
+								<i class="fa-solid fa-chevron-down"></i>
+							</span>
+						</button>
+
+						<div id="content-panduan-rubrik" class="hidden p-4 space-y-4 border-t border-amber-200">
+							<!-- 1. Kriteria Ambang Batas Kesalahan Dinamis -->
+							<div>
+								<div class="font-bold text-gray-800 mb-1.5 flex items-center gap-1.5">
+									<i class="fa-solid fa-ruler-combined text-emerald-600"></i> Ambang Batas Kesalahan (<span id="panduan-judul-jenis" class="text-emerald-700">Ziyadah</span>)
+								</div>
+								<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2" id="panduan-grid-threshold">
+									<!-- Diisi via JS sesuai jenis_setoran -->
+								</div>
+							</div>
+
+							<!-- 2. Matriks Skor 100 s.d <70 -->
+							<div>
+								<div class="font-bold text-gray-800 mb-1.5 flex items-center gap-1.5">
+									<i class="fa-solid fa-table text-emerald-600"></i> Matriks Nilai & Skor Akhir
+								</div>
+								<div class="overflow-x-auto">
+									<table class="w-full bg-white border border-gray-200 rounded-lg text-left text-[11px]">
+										<thead class="bg-gray-100 text-gray-600 border-b">
+											<tr>
+												<th class="p-2">Predikat Kelancaran</th>
+												<th class="p-2 text-center">Makhraj/Tajwid/Sifat BAIK</th>
+												<th class="p-2 text-center">Makhraj/Tajwid KURANG BAIK</th>
+											</tr>
+										</thead>
+										<tbody class="divide-y divide-gray-100">
+											<tr>
+												<td class="p-2 font-semibold text-emerald-800">Lancar (L)</td>
+												<td class="p-2 text-center font-bold text-emerald-700 bg-emerald-50/50">100</td>
+												<td class="p-2 text-center font-bold text-emerald-700 bg-emerald-50/50">95</td>
+											</tr>
+											<tr>
+												<td class="p-2 font-semibold text-blue-800">Cukup Lancar (CL)</td>
+												<td class="p-2 text-center font-bold text-blue-700 bg-blue-50/50">90</td>
+												<td class="p-2 text-center font-bold text-blue-700 bg-blue-50/50">85</td>
+											</tr>
+											<tr>
+												<td class="p-2 font-semibold text-amber-800">Kurang Lancar (KL)</td>
+												<td class="p-2 text-center font-bold text-amber-700 bg-amber-50/50">80</td>
+												<td class="p-2 text-center font-bold text-amber-700 bg-amber-50/50">75</td>
+											</tr>
+											<tr>
+												<td class="p-2 font-semibold text-rose-800">Tidak Lancar (TL)</td>
+												<td colspan="2" class="p-2 text-center font-bold text-rose-700 bg-rose-50/50">60 (&lt; 70)</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+
+							<!-- 3. Catatan Toleransi & Simak -->
+							<div class="bg-white p-3 rounded-lg border border-amber-200/80 space-y-1 text-[11px] text-gray-600">
+								<div class="font-bold text-gray-800 mb-1">Catatan Penting Guru Pembimbing / Penguji:</div>
+								<p>• <strong>Jenis Kesalahan:</strong> Lupa lanjutan ayat/kata, salah kata, salah harokat, atau salah hukum tajwid.</p>
+								<p id="panduan-toleransi-isyarat">• <strong>Toleransi Isyarat:</strong> Apabila diingatkan dengan isyarat lalu santri membenarkan, tidak dihitung kesalahan. Batas isyarat: <strong>maks. 3x</strong> (jika &gt;3x tetap salah maka dihitung kesalahan).</p>
+								<p>• <strong>Motivasi:</strong> Pembimbing senantiasa memberikan motivasi dan masukan perbaikan untuk halaqah berikutnya.</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="md:col-span-3">
 					<label class="block text-sm font-medium text-gray-700 mb-1">Catatan Evaluasi Guru (opsional)</label>
-					<textarea name="catatan" rows="2" placeholder="Tuliskan catatan perbaikan makhraj atau tajwid jika ada..."
+					<textarea name="catatan" rows="2" placeholder="Tuliskan catatan perbaikan makhraj, tajwid atau hafalan jika ada..."
 						class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500"></textarea>
 				</div>
 			</div>
@@ -218,24 +325,140 @@ document.getElementById('form-setoran').addEventListener('submit', function(e) {
 	btnSubmit.querySelector('i').className = 'fa-solid fa-spinner fa-spin';
 });
 
-// Kalkulasi estimasi poin secara real-time di UI
-function updateEstimatedPoin() {
-	const nilai = document.getElementById('select-nilai').value;
-	const status = document.getElementById('select-status').value;
+// Aturan Bisnis & Ambang Batas Kesalahan
+const THRESHOLDS = {
+	ziyadah:  [{ max: 0, kode: 'L' }, { max: 1, kode: 'CL' }, { max: 2, kode: 'KL' }, { max: null, kode: 'TL' }],
+	murojaah: [{ max: 0, kode: 'L' }, { max: 5, kode: 'CL' }, { max: 10, kode: 'KL' }, { max: null, kode: 'TL' }],
+	qc:       [{ max: 0, kode: 'L' }, { max: 1, kode: 'CL' }, { max: 2, kode: 'KL' }, { max: null, kode: 'TL' }]
+};
 
-	let base = 0;
-	if (nilai === 'A') base = 100;
-	else if (nilai === 'B') base = 75;
-	else if (nilai === 'C') base = 50;
+const KETERANGAN_RECOMMENDATIONS = {
+	ziyadah: {
+		'L':  { title: 'Lancar (L)', desc: 'Tidak Ada Kesalahan (0 salah/hlm)', action: 'Melanjutkan Hafalan', border: 'border-emerald-300 bg-emerald-50' },
+		'CL': { title: 'Cukup Lancar (CL)', desc: '1 Kesalahan per Halaman', action: 'Melanjutkan Hafalan', border: 'border-blue-300 bg-blue-50' },
+		'KL': { title: 'Kurang Lancar (KL)', desc: '2 Kesalahan per Halaman', action: 'Mengulang / Lanjut Catatan', border: 'border-amber-300 bg-amber-50' },
+		'TL': { title: 'Tidak Lancar (TL)', desc: '≥ 3 Kesalahan per Halaman', action: 'Mengulang Hafalan', border: 'border-rose-300 bg-rose-50' }
+	},
+	murojaah: {
+		'L':  { title: 'Lancar (L)', desc: 'Tidak Ada Kesalahan (0 salah/juz)', action: 'Melanjutkan Hafalan', border: 'border-emerald-300 bg-emerald-50' },
+		'CL': { title: 'Cukup Lancar (CL)', desc: '1 - 5 Kesalahan dalam 1 Juz', action: 'Melanjutkan Hafalan', border: 'border-blue-300 bg-blue-50' },
+		'KL': { title: 'Kurang Lancar (KL)', desc: '6 - 10 Kesalahan dalam 1 Juz', action: 'Mengulang / Lanjut Catatan', border: 'border-amber-300 bg-amber-50' },
+		'TL': { title: 'Tidak Lancar (TL)', desc: '≥ 11 Kesalahan dalam 1 Juz', action: 'Mengulang Hafalan', border: 'border-rose-300 bg-rose-50' }
+	},
+	qc: {
+		'L':  { title: 'Lancar (L)', desc: 'Tidak Ada Kesalahan (0 salah/2 hlm)', action: 'Melanjutkan Hafalan', border: 'border-emerald-300 bg-emerald-50' },
+		'CL': { title: 'Cukup Lancar (CL)', desc: '1 Kesalahan per 2 Halaman', action: 'Melanjutkan Hafalan', border: 'border-blue-300 bg-blue-50' },
+		'KL': { title: 'Kurang Lancar (KL)', desc: '2 Kesalahan per 2 Halaman', action: 'Mengulang / Lanjut Catatan', border: 'border-amber-300 bg-amber-50' },
+		'TL': { title: 'Tidak Lancar (TL)', desc: '≥ 3 Kesalahan per 2 Halaman', action: 'Mengulang Hafalan', border: 'border-rose-300 bg-rose-50' }
+	}
+};
 
-	let bonus = 0;
-	if (status === 'Lancar') bonus = 20;
-	else if (status === 'Cukup') bonus = 10;
-	else if (status === 'Perlu Perbaikan') bonus = 0;
-
-	const total = base + bonus;
-	document.getElementById('label-estimasi-poin').innerText = '+' + total + ' Poin';
+function togglePanduanRubrik() {
+	const content = document.getElementById('content-panduan-rubrik');
+	const icon = document.getElementById('icon-toggle-panduan');
+	if (content.classList.contains('hidden')) {
+		content.classList.remove('hidden');
+		icon.innerHTML = '<i class="fa-solid fa-chevron-up"></i>';
+	} else {
+		content.classList.add('hidden');
+		icon.innerHTML = '<i class="fa-solid fa-chevron-down"></i>';
+	}
 }
+
+function updatePanduanContent(jenis) {
+	const jenisNamaMap = {
+		ziyadah: 'Ziyadah (Hafalan Baru / per Halaman)',
+		murojaah: "Muroja'ah (Mengulang Hafalan / per Juz)",
+		qc: 'Quality Control (Uji Kelayakan / per 2 Halaman)'
+	};
+	document.getElementById('panduan-judul-jenis').innerText = jenisNamaMap[jenis] || 'Ziyadah';
+
+	const grid = document.getElementById('panduan-grid-threshold');
+	const recs = KETERANGAN_RECOMMENDATIONS[jenis] || KETERANGAN_RECOMMENDATIONS['ziyadah'];
+	
+	let html = '';
+	for (const key in recs) {
+		const item = recs[key];
+		html += `<div class="p-2.5 rounded-lg border ${item.border}">
+			<div class="font-bold text-[11px] text-gray-800">${item.title}</div>
+			<div class="text-[10px] text-gray-600 mt-0.5">${item.desc}</div>
+			<div class="text-[10px] font-semibold text-emerald-800 mt-1">➔ ${item.action}</div>
+		</div>`;
+	}
+	grid.innerHTML = html;
+
+	const toleransiEl = document.getElementById('panduan-toleransi-isyarat');
+	if (jenis === 'qc') {
+		toleransiEl.innerHTML = '• <strong>Toleransi Isyarat:</strong> Apabila diingatkan dengan isyarat lalu santri membenarkan, tidak dihitung kesalahan. Batas isyarat: <strong>maks. 2x</strong> (jika &gt;2x tetap salah maka dihitung kesalahan).';
+	} else {
+		toleransiEl.innerHTML = '• <strong>Toleransi Isyarat:</strong> Apabila diingatkan dengan isyarat lalu santri membenarkan, tidak dihitung kesalahan. Batas isyarat: <strong>maks. 3x</strong> (jika &gt;3x tetap salah maka dihitung kesalahan).';
+	}
+}
+
+function onJenisSetoranChange() {
+	const jenis = document.getElementById('select-jenis-setoran').value;
+	const qcWrapper = document.getElementById('qc-wrapper');
+	const helpText = document.getElementById('help-jenis-setoran');
+
+	if (jenis === 'qc') {
+		qcWrapper.classList.remove('hidden');
+		helpText.innerText = 'Standar kesalahan dihitung per 2 halaman';
+	} else {
+		qcWrapper.classList.add('hidden');
+		if (jenis === 'murojaah') {
+			helpText.innerText = 'Standar kesalahan dihitung per juz';
+		} else {
+			helpText.innerText = 'Standar kesalahan dihitung per halaman';
+		}
+	}
+	updatePanduanContent(jenis);
+	updateEstimatedPoin();
+}
+
+// Kalkulasi estimasi predikat & poin secara real-time di UI
+function updateEstimatedPoin() {
+	const jenis = document.getElementById('select-jenis-setoran').value;
+	let kesalahan = parseInt(document.getElementById('input-kesalahan').value, 10);
+	if (isNaN(kesalahan) || kesalahan < 0) kesalahan = 0;
+
+	const kualitas = document.getElementById('select-kualitas').value;
+
+	// Hitung Keterangan
+	const rules = THRESHOLDS[jenis] || THRESHOLDS['ziyadah'];
+	let kode = 'TL';
+	for (let i = 0; i < rules.length; i++) {
+		if (rules[i].max === null || kesalahan <= rules[i].max) {
+			kode = rules[i].kode;
+			break;
+		}
+	}
+
+	// Hitung Skor
+	const skor = (SKOR_MATRIX[kode] && SKOR_MATRIX[kode][kualitas]) ? SKOR_MATRIX[kode][kualitas] : 60;
+
+	// Update UI
+	const badgeKeterangan = document.getElementById('badge-keterangan');
+	badgeKeterangan.innerText = kode;
+	if (kode === 'L') {
+		badgeKeterangan.className = 'w-10 h-10 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm';
+	} else if (kode === 'CL') {
+		badgeKeterangan.className = 'w-10 h-10 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-sm';
+	} else if (kode === 'KL') {
+		badgeKeterangan.className = 'w-10 h-10 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold text-lg shadow-sm';
+	} else {
+		badgeKeterangan.className = 'w-10 h-10 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold text-lg shadow-sm';
+	}
+
+	const recs = KETERANGAN_RECOMMENDATIONS[jenis] || KETERANGAN_RECOMMENDATIONS['ziyadah'];
+	const recText = recs[kode] ? ` — ${recs[kode].action}` : '';
+	document.getElementById('label-keterangan').innerText = (KETERANGAN_LABELS[kode] || kode) + recText;
+	document.getElementById('label-estimasi-poin').innerText = skor + ' Poin';
+}
+
+// Inisialisasi saat load
+document.addEventListener('DOMContentLoaded', function() {
+	onJenisSetoranChange();
+});
 
 function switchAudioTab(tab) {
 	const recordSection = document.getElementById('audio-record-section');

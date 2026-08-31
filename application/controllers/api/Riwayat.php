@@ -16,14 +16,14 @@ class Riwayat extends MY_API_Controller
 
 	/**
 	 * GET /api/riwayat
-	 * Query: kelas_id, nisn, status, tanggal_awal, tanggal_akhir, q, limit, offset
+	 * Query: kelas_id, nisn, keterangan, tanggal_awal, tanggal_akhir, q, limit, offset
 	 * (kelas_id & nisn diabaikan untuk role siswa — otomatis dibatasi ke data sendiri)
 	 */
 	public function index()
 	{
 		$kelas_id      = $this->input->get('kelas_id');
 		$nisn          = $this->input->get('nisn');
-		$status        = $this->input->get('status');
+		$keterangan    = $this->input->get('keterangan');
 		$tanggal_awal  = $this->input->get('tanggal_awal');
 		$tanggal_akhir = $this->input->get('tanggal_akhir');
 		$search        = $this->input->get('q');
@@ -31,7 +31,7 @@ class Riwayat extends MY_API_Controller
 		$offset        = $this->input->get('offset') ? (int) $this->input->get('offset') : 0;
 
 		$filter = array(
-			'status'        => $status,
+			'keterangan'    => $keterangan,
 			'tanggal_awal'  => $tanggal_awal,
 			'tanggal_akhir' => $tanggal_akhir,
 			'search'        => $search,

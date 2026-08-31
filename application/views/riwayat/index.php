@@ -36,12 +36,13 @@
 			<?php endif; ?>
 
 			<div>
-				<label class="block text-xs font-medium text-gray-600 mb-1">Kualitas Kelancaran</label>
-				<select name="status" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
-					<option value="">-- Semua Status --</option>
-					<option value="Lancar" <?php echo ($selected_status === 'Lancar') ? 'selected' : ''; ?>>Lancar</option>
-					<option value="Cukup" <?php echo ($selected_status === 'Cukup') ? 'selected' : ''; ?>>Cukup</option>
-					<option value="Perlu Perbaikan" <?php echo ($selected_status === 'Perlu Perbaikan') ? 'selected' : ''; ?>>Perlu Perbaikan</option>
+				<label class="block text-xs font-medium text-gray-600 mb-1">Predikat Kelancaran</label>
+				<select name="keterangan" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
+					<option value="">-- Semua Predikat --</option>
+					<option value="L" <?php echo ($selected_keterangan === 'L') ? 'selected' : ''; ?>>L (Lancar)</option>
+					<option value="CL" <?php echo ($selected_keterangan === 'CL') ? 'selected' : ''; ?>>CL (Cukup Lancar)</option>
+					<option value="KL" <?php echo ($selected_keterangan === 'KL') ? 'selected' : ''; ?>>KL (Kurang Lancar)</option>
+					<option value="TL" <?php echo ($selected_keterangan === 'TL') ? 'selected' : ''; ?>>TL (Tidak Lancar)</option>
 				</select>
 			</div>
 
@@ -69,7 +70,7 @@
 			<button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition shadow-sm">
 				<i class="fa-solid fa-filter mr-1"></i> Terapkan Filter
 			</button>
-			<?php if ($selected_kelas || $selected_nisn || $selected_status || $tanggal_awal || $tanggal_akhir || $search): ?>
+			<?php if ($selected_kelas || $selected_nisn || $selected_keterangan || $tanggal_awal || $tanggal_akhir || $search): ?>
 				<a href="<?php echo site_url('riwayat'); ?>" class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">Reset Filter</a>
 			<?php endif; ?>
 		</div>
@@ -87,7 +88,7 @@
 						<th class="px-5 py-3.5">Santri</th>
 					<?php endif; ?>
 					<th class="px-5 py-3.5">Materi Hafalan</th>
-					<th class="px-5 py-3.5">Status & Nilai</th>
+					<th class="px-5 py-3.5">Jenis & Predikat</th>
 					<th class="px-5 py-3.5">Poin</th>
 					<th class="px-5 py-3.5">Audio Bukti</th>
 					<th class="px-5 py-3.5">Catatan & Guru</th>
@@ -120,15 +121,31 @@
 							</td>
 							<td class="px-5 py-4 whitespace-nowrap">
 								<?php
-									$badge_class = 'bg-gray-100 text-gray-700';
-									if ($row->status === 'Lancar') $badge_class = 'bg-emerald-100 text-emerald-700';
-									elseif ($row->status === 'Cukup') $badge_class = 'bg-amber-100 text-amber-700';
-									elseif ($row->status === 'Perlu Perbaikan') $badge_class = 'bg-red-100 text-red-700';
+									$badge_class = 'bg-emerald-100 text-emerald-700';
+									if ($row->keterangan === 'CL') $badge_class = 'bg-blue-100 text-blue-700';
+									elseif ($row->keterangan === 'KL') $badge_class = 'bg-amber-100 text-amber-700';
+									elseif ($row->keterangan === 'TL') $badge_class = 'bg-red-100 text-red-700';
+
+									$jenis_label = ucfirst($row->jenis_setoran);
+									if ($row->jenis_setoran === 'qc') $jenis_label = 'Quality Control';
+									elseif ($row->jenis_setoran === 'murojaah') $jenis_label = "Muroja'ah";
 								?>
-								<span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold <?php echo $badge_class; ?>">
-									<?php echo $row->status; ?>
-								</span>
-								<span class="ml-1 text-xs font-bold text-gray-700">(<?php echo $row->nilai; ?>)</span>
+								<div class="flex items-center gap-1.5 flex-wrap">
+									<span class="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-600">
+										<?php echo $jenis_label; ?>
+									</span>
+									<span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold <?php echo $badge_class; ?>">
+										<?php echo $row->keterangan; ?> (Skor: <?php echo $row->skor; ?>)
+									</span>
+									<?php if ($row->jenis_setoran === 'qc' && ! empty($row->hasil_qc)): ?>
+										<span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold <?php echo $row->hasil_qc === 'layak_tasmi' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'; ?>">
+											<?php echo $row->hasil_qc === 'layak_tasmi' ? "Layak Tasmi'" : "Belum Layak"; ?>
+										</span>
+									<?php endif; ?>
+								</div>
+								<div class="text-[11px] text-gray-400 mt-1">
+									Salah: <?php echo $row->jumlah_kesalahan; ?> &bull; Bacaan: <?php echo $row->kualitas_bacaan === 'baik' ? 'Baik' : 'Kurang Baik'; ?>
+								</div>
 							</td>
 							<td class="px-5 py-4 whitespace-nowrap">
 								<span class="font-bold text-emerald-600 text-base">+<?php echo $row->poin; ?></span>

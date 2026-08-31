@@ -46,7 +46,7 @@ class Setoran_model extends CI_Model
 	/**
 	 * Ambil semua data setoran dengan filter dan relasi join.
 	 *
-	 * @param array $filter [kelas_id, kelas_ids, nisn, tanggal_awal, tanggal_akhir, status, search]
+	 * @param array $filter [kelas_id, kelas_ids, nisn, tanggal_awal, tanggal_akhir, keterangan, jenis_setoran, search]
 	 * @param int|null $limit
 	 * @param int|null $offset
 	 * @return array
@@ -80,8 +80,12 @@ class Setoran_model extends CI_Model
 			$this->db->where('setoran.tanggal <=', $filter['tanggal_akhir']);
 		}
 
-		if (! empty($filter['status'])) {
-			$this->db->where('setoran.status', $filter['status']);
+		if (! empty($filter['keterangan'])) {
+			$this->db->where('setoran.keterangan', $filter['keterangan']);
+		}
+
+		if (! empty($filter['jenis_setoran'])) {
+			$this->db->where('setoran.jenis_setoran', $filter['jenis_setoran']);
 		}
 
 		if (! empty($filter['search'])) {
@@ -131,8 +135,12 @@ class Setoran_model extends CI_Model
 			$this->db->where('setoran.tanggal <=', $filter['tanggal_akhir']);
 		}
 
-		if (! empty($filter['status'])) {
-			$this->db->where('setoran.status', $filter['status']);
+		if (! empty($filter['keterangan'])) {
+			$this->db->where('setoran.keterangan', $filter['keterangan']);
+		}
+
+		if (! empty($filter['jenis_setoran'])) {
+			$this->db->where('setoran.jenis_setoran', $filter['jenis_setoran']);
 		}
 
 		if (! empty($filter['search'])) {
@@ -189,9 +197,16 @@ class Setoran_model extends CI_Model
 		// selama sepersekian detik sebelum ditimpa kode final di bawah.
 		$data['kode_setoran'] = 'TMP-' . uniqid('', true);
 
-		// Hitung poin secara konsisten
-		$poin = $this->poin_calculator->hitung_poin($data['nilai'], $data['status']);
-		$data['poin'] = $poin;
+		// Hitung keterangan (L/CL/KL/TL) & skor secara OTOMATIS dan konsisten,
+		// jika belum disediakan oleh caller (controller sudah menghitungnya
+		// lebih dulu, tapi dihitung ulang di sini juga sebagai jaring pengaman
+		// supaya model ini tetap konsisten dipakai dari jalur manapun).
+		if (! isset($data['keterangan']) || ! isset($data['skor'])) {
+			$data['keterangan'] = $this->poin_calculator->hitung_keterangan($data['jumlah_kesalahan'], $data['jenis_setoran']);
+			$data['skor']       = $this->poin_calculator->hitung_skor($data['keterangan'], $data['kualitas_bacaan']);
+		}
+		$data['poin'] = $data['skor']; // poin = skor apa adanya
+		$poin = $data['poin'];
 
 		$this->db->trans_begin();
 
@@ -229,7 +244,8 @@ class Setoran_model extends CI_Model
 	 * Update penilaian setoran (oleh guru/admin), menyesuaikan selisih poin siswa.
 	 *
 	 * @param int   $id
-	 * @param array $data Kolom yang diperbarui: nilai, status, catatan, guru_pengoreksi_id
+	 * @param array $data Kolom yang diperbarui: jenis_setoran, jumlah_kesalahan,
+	 *                     kualitas_bacaan, hasil_qc, catatan, guru_pengoreksi_id
 	 * @return bool
 	 * @throws Exception
 	 */
@@ -241,15 +257,30 @@ class Setoran_model extends CI_Model
 		}
 
 		$poin_lama = (int) $setoran->poin;
-		$nilai_baru = isset($data['nilai']) ? $data['nilai'] : $setoran->nilai;
-		$status_baru = isset($data['status']) ? $data['status'] : $setoran->status;
 
-		$poin_baru = $this->poin_calculator->hitung_poin($nilai_baru, $status_baru);
-		$selisih = $poin_baru - $poin_lama;
+		$jenis_setoran_baru    = isset($data['jenis_setoran']) ? $data['jenis_setoran'] : $setoran->jenis_setoran;
+		$jumlah_kesalahan_baru = isset($data['jumlah_kesalahan']) ? $data['jumlah_kesalahan'] : $setoran->jumlah_kesalahan;
+		$kualitas_bacaan_baru  = isset($data['kualitas_bacaan']) ? $data['kualitas_bacaan'] : $setoran->kualitas_bacaan;
 
-		$data['nilai']  = $nilai_baru;
-		$data['status'] = $status_baru;
-		$data['poin']   = $poin_baru;
+		$keterangan_baru = $this->poin_calculator->hitung_keterangan($jumlah_kesalahan_baru, $jenis_setoran_baru);
+		$skor_baru       = $this->poin_calculator->hitung_skor($keterangan_baru, $kualitas_bacaan_baru);
+		$poin_baru       = $skor_baru;
+		$selisih         = $poin_baru - $poin_lama;
+
+		$data['jenis_setoran']    = $jenis_setoran_baru;
+		$data['jumlah_kesalahan'] = $jumlah_kesalahan_baru;
+		$data['kualitas_bacaan']  = $kualitas_bacaan_baru;
+		$data['keterangan']       = $keterangan_baru;
+		$data['skor']             = $skor_baru;
+		$data['poin']             = $poin_baru;
+
+		// hasil_qc hanya relevan untuk jenis 'qc'; kosongkan jika berubah
+		// menjadi jenis lain supaya tidak menyisakan data tidak konsisten.
+		if ($jenis_setoran_baru !== 'qc') {
+			$data['hasil_qc'] = null;
+		} elseif (! isset($data['hasil_qc'])) {
+			$data['hasil_qc'] = $setoran->hasil_qc;
+		}
 
 		$this->db->trans_begin();
 
@@ -333,17 +364,17 @@ class Setoran_model extends CI_Model
 	 * Hitung total setoran untuk keperluan statistik/dashboard.
 	 *
 	 * @param array<int> $kelas_ids
-	 * @param string|null $status
+	 * @param string|null $keterangan 'L' | 'CL' | 'KL' | 'TL'
 	 * @param string|null $nisn
 	 * @return int
 	 */
-	public function count_setoran(array $kelas_ids = array(), $status = null, $nisn = null)
+	public function count_setoran(array $kelas_ids = array(), $keterangan = null, $nisn = null)
 	{
 		if (! empty($kelas_ids)) {
 			$this->db->where_in('kelas_id', $kelas_ids);
 		}
-		if (! empty($status)) {
-			$this->db->where('status', $status);
+		if (! empty($keterangan)) {
+			$this->db->where('keterangan', $keterangan);
 		}
 		if (! empty($nisn)) {
 			$this->db->where('nisn', $nisn);
@@ -376,7 +407,8 @@ class Setoran_model extends CI_Model
 	}
 
 	/**
-	 * Ambil daftar juz unik yang sudah disetorkan (dan statusnya Lancar/Cukup) per santri
+	 * Ambil daftar juz unik yang sudah disetorkan (dengan keterangan L/CL,
+	 * yaitu tidak perlu mengulang) per santri
 	 *
 	 * @param string $nisn
 	 * @return array
@@ -386,7 +418,7 @@ class Setoran_model extends CI_Model
 		return $this->db->select('juz, COUNT(id) as total_setoran, MAX(tanggal) as tanggal_terakhir')
 			->from($this->table)
 			->where('nisn', $nisn)
-			->where_in('status', array('Lancar', 'Cukup'))
+			->where_in('keterangan', array('L', 'CL'))
 			->group_by('juz')
 			->order_by('juz', 'ASC')
 			->get()
@@ -407,9 +439,10 @@ class Setoran_model extends CI_Model
 			kelas.nama_kelas,
 			COUNT(setoran.id) as total_setoran,
 			SUM(setoran.poin) as total_poin_periode,
-			SUM(CASE WHEN setoran.status = "Lancar" THEN 1 ELSE 0 END) as total_lancar,
-			SUM(CASE WHEN setoran.status = "Cukup" THEN 1 ELSE 0 END) as total_cukup,
-			SUM(CASE WHEN setoran.status = "Perlu Perbaikan" THEN 1 ELSE 0 END) as total_perbaikan,
+			SUM(CASE WHEN setoran.keterangan = "L"  THEN 1 ELSE 0 END) as total_lancar,
+			SUM(CASE WHEN setoran.keterangan = "CL" THEN 1 ELSE 0 END) as total_cukup_lancar,
+			SUM(CASE WHEN setoran.keterangan = "KL" THEN 1 ELSE 0 END) as total_kurang_lancar,
+			SUM(CASE WHEN setoran.keterangan = "TL" THEN 1 ELSE 0 END) as total_tidak_lancar,
 			MAX(setoran.tanggal) as setoran_terakhir
 		')
 		->from($this->table)
