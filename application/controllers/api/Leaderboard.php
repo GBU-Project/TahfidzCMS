@@ -21,6 +21,7 @@ class Leaderboard extends MY_API_Controller
 	{
 		$kelas_id = $this->input->get('kelas_id');
 		$limit    = $this->input->get('limit') ? (int) $this->input->get('limit') : 100;
+		$limit    = max(1, min($limit, 200)); // fix keamanan: batas atas cegah resource exhaustion
 
 		$kelas_ids_filter = array();
 

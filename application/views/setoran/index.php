@@ -135,11 +135,11 @@
 							<?php endif; ?>
 						</td>
 						<td class="px-4 py-3.5 text-right">
-							<a href="<?php echo site_url('setoran/hapus/' . $s->id); ?>"
-								onclick="return confirm('Apakah Anda yakin ingin menghapus data setoran <?php echo htmlspecialchars(addslashes($s->kode_setoran)); ?>? Poin siswa akan dikurangi.');"
-								class="text-red-500 hover:text-red-700 p-1.5 rounded hover:bg-red-50 text-xs font-medium">
-								<i class="fa-solid fa-trash mr-1"></i> Hapus
-							</a>
+							<?php echo form_open('setoran/hapus/' . $s->id, array('onsubmit' => "return confirm('Apakah Anda yakin ingin menghapus data setoran " . htmlspecialchars(addslashes($s->kode_setoran)) . "? Poin siswa akan dikurangi.');")); ?>
+								<button type="submit" class="text-red-500 hover:text-red-700 p-1.5 rounded hover:bg-red-50 text-xs font-medium">
+									<i class="fa-solid fa-trash mr-1"></i> Hapus
+								</button>
+							<?php echo form_close(); ?>
 						</td>
 					</tr>
 				<?php endforeach; ?>

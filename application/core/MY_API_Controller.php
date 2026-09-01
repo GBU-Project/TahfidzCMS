@@ -18,7 +18,11 @@ class MY_API_Controller extends CI_Controller
 	/** @var string|null Role user ('admin'|'guru'|'siswa'), disalin dari $this->user->role */
 	protected $role;
 
-	/** @var array Daftar kelas_id yang boleh diakses (khusus role guru) */
+	/** @var array Daftar kelas_id yang boleh diakses. Kosong ([]) HANYA berlaku
+	 * untuk admin. Untuk guru, TIDAK PERNAH kosong — jika belum ditugaskan ke
+	 * kelas manapun, diisi sentinel [-1] (lihat _load_kelas_diizinkan()), supaya
+	 * `where_in('kelas_id', $kelas_ids)` di model tidak salah dianggap "tanpa
+	 * filter" saat diberi array kosong. */
 	protected $kelas_diizinkan = array();
 
 	public function __construct()
@@ -66,10 +70,16 @@ class MY_API_Controller extends CI_Controller
 		$this->role = $this->user->role;
 	}
 
+	/**
+	 * PENTING (fix keamanan): jika guru tidak punya kelas yang diampu,
+	 * kelas_diizinkan diisi sentinel [-1] (bukan array kosong []) — lihat
+	 * penjelasan lengkap di docblock property $kelas_diizinkan di atas.
+	 */
 	private function _load_kelas_diizinkan()
 	{
 		if ($this->user && $this->user->role === 'guru') {
-			$this->kelas_diizinkan = $this->Guru_kelas_model->get_kelas_ids_by_guru($this->user->id);
+			$kelas_ids = $this->Guru_kelas_model->get_kelas_ids_by_guru($this->user->id);
+			$this->kelas_diizinkan = ! empty($kelas_ids) ? $kelas_ids : array(-1);
 		}
 	}
 

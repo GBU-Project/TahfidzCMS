@@ -28,7 +28,8 @@ class Riwayat extends MY_API_Controller
 		$tanggal_akhir = $this->input->get('tanggal_akhir');
 		$search        = $this->input->get('q');
 		$limit         = $this->input->get('limit') ? (int) $this->input->get('limit') : 50;
-		$offset        = $this->input->get('offset') ? (int) $this->input->get('offset') : 0;
+		$limit         = max(1, min($limit, 200)); // fix keamanan: batas atas cegah resource exhaustion
+		$offset        = $this->input->get('offset') ? max(0, (int) $this->input->get('offset')) : 0;
 
 		$filter = array(
 			'keterangan'    => $keterangan,

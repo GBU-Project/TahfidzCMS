@@ -71,19 +71,19 @@
 							<?php endif; ?>
 						</td>
 						<td class="px-5 py-3.5 text-right space-x-1 whitespace-nowrap">
-							<a href="<?php echo site_url('users/reset-password/' . $u->id); ?>"
-								onclick="return confirm('Reset kata sandi untuk <?php echo htmlspecialchars(addslashes($u->nama)); ?> kembali ke sandi awal?');"
-								class="text-amber-600 hover:text-amber-800 hover:bg-amber-50 px-2 py-1 rounded-lg font-medium text-xs transition" title="Reset Sandi">
-								<i class="fa-solid fa-key mr-0.5"></i> Reset
-							</a>
+							<?php echo form_open('users/reset-password/' . $u->id, array('class' => 'inline', 'onsubmit' => "return confirm('Reset kata sandi untuk " . htmlspecialchars(addslashes($u->nama)) . " kembali ke sandi awal?');")); ?>
+								<button type="submit" class="text-amber-600 hover:text-amber-800 hover:bg-amber-50 px-2 py-1 rounded-lg font-medium text-xs transition" title="Reset Sandi">
+									<i class="fa-solid fa-key mr-0.5"></i> Reset
+								</button>
+							<?php echo form_close(); ?>
 							<a href="<?php echo site_url('users/form/' . $u->id); ?>" class="text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 px-2 py-1 rounded-lg font-medium text-xs transition">
 								<i class="fa-solid fa-pen-to-square mr-0.5"></i> Edit
 							</a>
-							<a href="<?php echo site_url('users/hapus/' . $u->id); ?>"
-								onclick="return confirm('Yakin ingin menghapus <?php echo htmlspecialchars(addslashes($u->nama)); ?>?');"
-								class="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg font-medium text-xs transition">
-								<i class="fa-solid fa-trash mr-0.5"></i> Hapus
-							</a>
+							<?php echo form_open('users/hapus/' . $u->id, array('class' => 'inline', 'onsubmit' => "return confirm('Yakin ingin menghapus " . htmlspecialchars(addslashes($u->nama)) . "?');")); ?>
+								<button type="submit" class="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg font-medium text-xs transition">
+									<i class="fa-solid fa-trash mr-0.5"></i> Hapus
+								</button>
+							<?php echo form_close(); ?>
 						</td>
 					</tr>
 				<?php endforeach; ?>

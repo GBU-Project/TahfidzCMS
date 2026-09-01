@@ -214,10 +214,16 @@ class Setoran extends MY_Controller
 	}
 
 	/**
-	 * GET /setoran/hapus/(:num) -> Hapus data setoran
+	 * POST /setoran/hapus/(:num) -> Hapus data setoran
+	 * Wajib POST — fix keamanan (lihat catatan serupa di Users::hapus()).
 	 */
 	public function hapus($id)
 	{
+		if ($this->input->method() !== 'post') {
+			show_error('Method tidak diizinkan.', 405, 'Method Not Allowed');
+			return;
+		}
+
 		$setoran = $this->Setoran_model->get_by_id($id);
 		if (! $setoran) {
 			show_404();

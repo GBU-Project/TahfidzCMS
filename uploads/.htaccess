@@ -1,0 +1,19 @@
+# Fix keamanan: folder uploads/ hanya boleh menyimpan & menyajikan file
+# statis (audio, gambar). Blokir eksekusi PHP/CGI di sini supaya file
+# berbahaya yang lolos validasi MIME tidak bisa dieksekusi sebagai script
+# walau tersimpan di server (defense-in-depth, bukan pengganti validasi MIME).
+<IfModule mod_php7.c>
+	php_flag engine off
+</IfModule>
+<IfModule mod_php.c>
+	php_flag engine off
+</IfModule>
+
+<FilesMatch "\.(php|php3|php4|php5|php7|phtml|pl|py|cgi|asp|aspx|sh|exe)$">
+	<IfModule authz_core_module>
+		Require all denied
+	</IfModule>
+	<IfModule !authz_core_module>
+		Deny from all
+	</IfModule>
+</FilesMatch>

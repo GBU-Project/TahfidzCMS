@@ -26,7 +26,16 @@ class MY_Controller extends CI_Controller
 	 */
 	protected $role;
 
-	/** @var array Daftar kelas_id yang boleh diakses (kosong = semua, untuk admin) */
+	/** @var array Daftar kelas_id yang boleh diakses. Kosong ([]) HANYA berlaku
+	 * untuk admin (lihat pola pemakaian: `is_guru() ? $this->kelas_diizinkan : array()`
+	 * di semua controller — admin tidak pernah membaca property ini secara
+	 * langsung). Untuk guru, property ini TIDAK PERNAH kosong: jika guru
+	 * belum ditugaskan ke kelas manapun, diisi sentinel [-1] (id yang mustahil
+	 * match) — lihat _load_kelas_diizinkan(). Ini krusial karena banyak model
+	 * memakai `where_in('kelas_id', $kelas_ids)` yang, bila diberi array
+	 * kosong, TIDAK menghasilkan filter sama sekali (bukan "tanpa hasil"),
+	 * sehingga guru tanpa kelas bisa salah melihat SEMUA data sekolah kalau
+	 * property ini dibiarkan kosong. */
 	protected $kelas_diizinkan = array();
 
 	public function __construct()
@@ -71,11 +80,20 @@ class MY_Controller extends CI_Controller
 	 * Admin dianggap boleh akses semua kelas (kelas_diizinkan dibiarkan kosong,
 	 * model/controller yang query HARUS treat "kosong" = "semua" HANYA jika role admin,
 	 * jangan sampai tertukar dengan "guru tanpa kelas" — lihat is_admin()/is_guru() di bawah.
+	 *
+	 * PENTING (fix keamanan): jika guru tidak punya kelas yang diampu sama
+	 * sekali, kelas_diizinkan diisi sentinel [-1] (bukan array kosong []).
+	 * Alasan: banyak model memfilter dengan `if (! empty($kelas_ids)) where_in(...)`
+	 * — array kosong membuat kondisi itu FALSE sehingga filter dilewati
+	 * sepenuhnya (bukan "tidak ada hasil"), yang berarti guru tanpa
+	 * penugasan kelas bisa melihat SELURUH data sekolah. Sentinel [-1]
+	 * memastikan where_in() tetap dieksekusi tapi tidak match apapun.
 	 */
 	private function _load_kelas_diizinkan()
 	{
 		if ($this->user && $this->user->role === 'guru') {
-			$this->kelas_diizinkan = $this->Guru_kelas_model->get_kelas_ids_by_guru($this->user->id);
+			$kelas_ids = $this->Guru_kelas_model->get_kelas_ids_by_guru($this->user->id);
+			$this->kelas_diizinkan = ! empty($kelas_ids) ? $kelas_ids : array(-1);
 		}
 	}
 

@@ -139,7 +139,8 @@ class Excel_exporter
 				if (is_numeric($val) && !preg_match('/^0[0-9]+/', $val_str)) {
 					$sheet .= '<c r="' . $cell_ref . '" s="0" t="n"><v>' . $val_str . '</v></c>';
 				} else {
-					$sheet .= '<c r="' . $cell_ref . '" s="0" t="inlineStr"><is><t>' . htmlspecialchars($val_str, ENT_QUOTES, 'UTF-8') . '</t></is></c>';
+					$clean_str = $this->sanitize_formula($val_str);
+					$sheet .= '<c r="' . $cell_ref . '" s="0" t="inlineStr"><is><t>' . htmlspecialchars($clean_str, ENT_QUOTES, 'UTF-8') . '</t></is></c>';
 				}
 				$col_num++;
 			}
@@ -162,6 +163,29 @@ class Excel_exporter
 		readfile($temp_file);
 		@unlink($temp_file);
 		exit();
+	}
+
+	/**
+	 * Sanitasi nilai string untuk mencegah CSV/Excel formula injection.
+	 * Karakter awal =, +, -, @, \t, \r diprefix dengan single quote (').
+	 *
+	 * @param string $val
+	 * @return string
+	 */
+	public function sanitize_formula($val)
+	{
+		$val = (string) $val;
+		if ($val === '') {
+			return '';
+		}
+
+		// Jika diawali karakter formula trigger Excel
+		$first_char = $val[0];
+		if (in_array($first_char, array('=', '+', '-', '@', "\t", "\r"), TRUE)) {
+			return "'" . $val;
+		}
+
+		return $val;
 	}
 
 	/**
@@ -240,7 +264,8 @@ class Excel_exporter
 			foreach ($row as $val) {
 				$val_str = (string) $val;
 				$type = is_numeric($val) && !preg_match('/^0[0-9]+/', $val_str) ? 'Number' : 'String';
-				$xml .= '   <Cell ss:StyleID="DataStyle"><Data ss:Type="' . $type . '">' . htmlspecialchars($val_str) . '</Data></Cell>' . "\n";
+				$clean_str = $this->sanitize_formula($val_str);
+				$xml .= '   <Cell ss:StyleID="DataStyle"><Data ss:Type="' . $type . '">' . htmlspecialchars($clean_str) . '</Data></Cell>' . "\n";
 			}
 			$xml .= '  </Row>' . "\n";
 		}
@@ -253,4 +278,3 @@ class Excel_exporter
 		exit();
 	}
 }
-

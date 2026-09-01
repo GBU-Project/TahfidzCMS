@@ -393,6 +393,24 @@ class Installer extends CI_Controller
 
 		@file_put_contents($db_config_file, $db_content);
 
+		// Fix keamanan: generate encryption_key acak & tulis ke config.php,
+		// menggantikan placeholder hardcoded bawaan repo. Tanpa ini, semua
+		// instalasi memakai key yang sama persis (publik, ada di source code),
+		// sehingga data yang dienkripsi (mis. cookie session terenkripsi)
+		// bisa didekripsi siapapun yang tahu key placeholder tsb.
+		$config_file = APPPATH . 'config/config.php';
+		$config_content = @file_get_contents($config_file);
+		if ($config_content !== FALSE) {
+			$random_key = bin2hex(random_bytes(32));
+			$config_content = preg_replace(
+				"/\\\$config\\['encryption_key'\\]\\s*=\\s*'[^']*';/",
+				"\$config['encryption_key'] = '" . $random_key . "';",
+				$config_content,
+				1
+			);
+			@file_put_contents($config_file, $config_content);
+		}
+
 		// Buat file installed.lock
 		$lock_content = "Installed on: " . date('Y-m-d H:i:s') . "\nDatabase: " . $db_name . "\nAdmin: " . $admin_username . "\n";
 		@file_put_contents($this->lock_file, $lock_content);

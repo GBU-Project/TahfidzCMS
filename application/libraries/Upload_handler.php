@@ -39,6 +39,7 @@ class Upload_handler
 		return $this->_do_upload($field_name, array(
 			'upload_path'   => './uploads/profile/',
 			'allowed_types' => self::FOTO_ALLOWED_TYPES,
+			'allowed_mimes' => array('image/png', 'image/x-png', 'image/jpeg', 'image/pjpeg', 'image/webp', 'image/x-webp'),
 			'max_size'      => self::FOTO_MAX_SIZE_KB,
 			'encrypt_name'  => TRUE,
 		));
@@ -124,6 +125,11 @@ class Upload_handler
 		return $this->_do_upload($field_name, array(
 			'upload_path'   => './uploads/setoran_audio/',
 			'allowed_types' => self::AUDIO_ALLOWED_TYPES,
+			'allowed_mimes' => array(
+				'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav',
+				'audio/ogg', 'audio/mp4', 'audio/webm', 'audio/x-m4a',
+				'application/octet-stream', // beberapa browser mengirim webm/ogg sebagai ini
+			),
 			'max_size'      => self::AUDIO_MAX_SIZE_KB,
 			'encrypt_name'  => TRUE,
 		));
@@ -144,6 +150,25 @@ class Upload_handler
 		}
 
 		$upload_data = $this->ci->upload->data();
+
+		// Fix keamanan: validasi MIME content via finfo (bukan cuma ekstensi
+		// nama file, yang mudah dipalsukan). Kalau isi file tidak cocok
+		// dengan daftar MIME yang diizinkan untuk jenis upload ini, file
+		// dihapus & upload ditolak — mencegah file berbahaya (mis. .php
+		// disamarkan jadi .mp3/.jpg) tersimpan di server. Daftar MIME
+		// diberikan lewat $config['allowed_mimes'] oleh masing-masing
+		// caller (upload_foto_profil / upload_audio_setoran), supaya
+		// pengecekan ini tetap generik dan tidak spesifik ke satu jenis file.
+		if (! empty($config['allowed_mimes']) && function_exists('finfo_open')) {
+			$finfo = finfo_open(FILEINFO_MIME_TYPE);
+			$mime  = finfo_file($finfo, $upload_data['full_path']);
+			finfo_close($finfo);
+
+			if (! in_array($mime, $config['allowed_mimes'], TRUE)) {
+				@unlink($upload_data['full_path']);
+				return array('success' => FALSE, 'path' => null, 'error' => 'Tipe konten berkas tidak valid (' . htmlspecialchars($mime) . ').');
+			}
+		}
 
 		// Simpan path RELATIF (tanpa './') supaya konsisten dipakai di <img src>/<audio src>
 		$relative_path = ltrim(str_replace('./', '', $config['upload_path']), '/') . $upload_data['file_name'];

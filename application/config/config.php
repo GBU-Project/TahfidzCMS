@@ -179,7 +179,7 @@ $config['sess_expiration'] = 7200;
 $config['sess_save_path'] = NULL;
 $config['sess_match_ip'] = FALSE;
 $config['sess_time_to_update'] = 300;
-$config['sess_regenerate_destroy'] = FALSE;
+$config['sess_regenerate_destroy'] = TRUE;
 
 /*
 |--------------------------------------------------------------------------
@@ -189,8 +189,12 @@ $config['sess_regenerate_destroy'] = FALSE;
 $config['cookie_prefix']	= '';
 $config['cookie_domain']	= '';
 $config['cookie_path']		= '/';
-$config['cookie_secure']	= FALSE;
-$config['cookie_httponly'] 	= FALSE;
+// Fix keamanan: cookie_secure otomatis TRUE saat diakses via HTTPS (aman utk
+// dev lokal tanpa HTTPS, tapi wajib aktif di production yang selalu HTTPS).
+// cookie_httponly TRUE mencegah cookie dibaca lewat JavaScript (mitigasi XSS
+// terhadap pencurian session).
+$config['cookie_secure']	= (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+$config['cookie_httponly'] 	= TRUE;
 
 /*
 |--------------------------------------------------------------------------

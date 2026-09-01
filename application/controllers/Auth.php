@@ -22,6 +22,7 @@ class Auth extends CI_Controller
 		$this->load->database();
 		$this->load->model('User_model');
 		$this->load->model('Setting_model');
+		$this->load->model('Login_attempt_model');
 	}
 
 	/**
@@ -70,14 +71,35 @@ class Auth extends CI_Controller
 
 		$username = $this->input->post('username', TRUE);
 		$password = $this->input->post('password', FALSE);
+		$ip_address = $this->input->ip_address();
+
+		// Fix keamanan: rate limit login web, konsisten dengan api/Auth.php
+		// yang sudah lebih dulu memakai Login_attempt_model. Sebelumnya
+		// login web tidak dibatasi sama sekali sehingga bisa di-brute-force.
+		if ($this->Login_attempt_model->is_locked($username, $ip_address)) {
+			$settings = $this->Setting_model->get_all();
+			$this->load->view('auth/login', array(
+				'error'    => 'Terlalu banyak percobaan login gagal. Silakan coba lagi dalam beberapa menit.',
+				'settings' => $settings,
+			));
+			return;
+		}
 
 		$user = $this->User_model->verify_credentials($username, $password);
 
 		if (! $user) {
+			$this->Login_attempt_model->record_failed($username, $ip_address);
 			$settings = $this->Setting_model->get_all();
 			$this->load->view('auth/login', array('error' => 'NIP/NISN atau password salah.', 'settings' => $settings));
 			return;
 		}
+
+		$this->Login_attempt_model->clear($username, $ip_address);
+
+		// Fix keamanan: regenerasi session ID saat login berhasil (mencegah
+		// session fixation — attacker yang sudah tahu/menyuntik session ID
+		// korban SEBELUM login tidak bisa lagi memakai ID yang sama setelahnya).
+		$this->session->sess_regenerate(TRUE);
 
 		$this->session->set_userdata(array(
 			'user_id'  => $user->id,

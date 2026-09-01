@@ -41,6 +41,15 @@ class Progress extends MY_Controller
 
 			if (! empty($selected_nisn)) {
 				$siswa_aktif = $this->Siswa_model->get_by_nisn($selected_nisn);
+
+				// Fix keamanan (IDOR): guru hanya boleh lihat progress siswa
+				// di kelas yang diampunya, konsisten dengan validasi yang
+				// sudah ada di api/Progress.php. Tanpa ini, guru bisa melihat
+				// progress siswa kelas lain hanya dengan mengganti ?nisn=...
+				if ($siswa_aktif && $this->is_guru() && ! in_array((int) $siswa_aktif->kelas_id, $this->kelas_diizinkan, TRUE)) {
+					show_error('Anda tidak memiliki akses ke siswa di kelas ini.', 403, 'Akses Ditolak');
+					return;
+				}
 			} elseif (! empty($siswa_list)) {
 				// Default ke siswa pertama jika belum dipilih
 				$siswa_aktif = $siswa_list[0];

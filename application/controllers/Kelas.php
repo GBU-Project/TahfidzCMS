@@ -51,8 +51,17 @@ class Kelas extends MY_Controller
 		redirect('kelas');
 	}
 
+	/**
+	 * POST /kelas/hapus/(:num) — wajib POST, fix keamanan (lihat catatan
+	 * serupa di Users::hapus()).
+	 */
 	public function hapus($id)
 	{
+		if ($this->input->method() !== 'post') {
+			show_error('Method tidak diizinkan.', 405, 'Method Not Allowed');
+			return;
+		}
+
 		$result = $this->Kelas_model->delete($id);
 
 		if ($result === TRUE) {

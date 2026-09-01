@@ -187,15 +187,24 @@ class Users extends MY_Controller
 	}
 
 	/**
-	 * GET /users/hapus/(:num)
+	 * POST /users/hapus/(:num)
 	 * Menghapus user. Jika role siswa, baris di tabel siswa ikut terhapus
 	 * otomatis lewat ON DELETE SET NULL/CASCADE yang relevan (lihat skema),
 	 * namun di sini kita hapus eksplisit dulu agar histori setoran (yang
 	 * FK-nya CASCADE ke siswa) tidak hilang tanpa sepengetahuan admin —
 	 * karenanya khusus siswa yang MASIH punya setoran, hapus ditolak.
+	 *
+	 * Wajib POST (bukan GET) — fix keamanan: sebelumnya bisa dipicu lewat
+	 * tautan/gambar tersembunyi (CSRF), karena proteksi CSRF CI3 hanya
+	 * berlaku untuk request POST.
 	 */
 	public function hapus($id)
 	{
+		if ($this->input->method() !== 'post') {
+			show_error('Method tidak diizinkan.', 405, 'Method Not Allowed');
+			return;
+		}
+
 		$user = $this->User_model->get_by_id($id);
 
 		if (! $user) {
@@ -219,11 +228,18 @@ class Users extends MY_Controller
 	}
 
 	/**
-	 * GET /users/reset-password/(:num)
+	 * POST /users/reset-password/(:num)
 	 * Reset kata sandi pengguna kembali ke default ('123456') oleh admin.
+	 *
+	 * Wajib POST — fix keamanan, lihat catatan di method hapus() di atas.
 	 */
 	public function reset_password($id)
 	{
+		if ($this->input->method() !== 'post') {
+			show_error('Method tidak diizinkan.', 405, 'Method Not Allowed');
+			return;
+		}
+
 		$user = $this->User_model->get_by_id($id);
 
 		if (! $user) {

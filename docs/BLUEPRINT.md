@@ -339,3 +339,87 @@ tidak disimpan di repo). Menggantikan sistem penilaian lama yang generik (`nilai
 - [ ] `INSTALLATION.md` sebaiknya diberi catatan: instalasi BARU cukup `tahfidzcms.sql`; instalasi
       **existing** yang upgrade dari versi lama wajib jalankan `migration_kriteria_penilaian.sql`
       secara manual (skrip installer otomatis TIDAK menjalankan file migrasi ini).
+
+---
+
+## 9. Fase 9 — Audit Keamanan & Perbaikan (Security Hardening Round 2) ✅ *(selesai)*
+
+**Update status Fase 8**: Seluruh checklist Frontend/View di §8b yang sebelumnya ditandai
+"BELUM DIKERJAKAN" **sudah selesai dikerjakan** (form Setoran, modal Penilaian, Riwayat,
+Dashboard, dst. — semua sudah pakai field `jenis_setoran`/`jumlah_kesalahan`/`kualitas_bacaan`/
+`hasil_qc` dengan live preview & panduan kriteria kolaps). Detail checklist §8b dibiarkan apa
+adanya sebagai jejak historis; anggap semua poin di sana closed kecuali disebutkan lain di sini.
+
+### 9a. Temuan & perbaikan dari audit keamanan independen
+
+Audit eksternal (analisis statis, tanpa runtime PHP) menemukan 4 celah Prioritas Tinggi dan
+6 celah Menengah. Semua sudah diverifikasi ulang terhadap kode asli (bukan asumsi dari laporan)
+sebelum diperbaiki.
+
+**Prioritas Tinggi (semua diperbaiki):**
+
+1. **H1 — Guru tanpa kelas diampu bisa lihat semua data sekolah.** Akar masalah:
+   `kelas_diizinkan` kosong (`[]`) untuk guru tanpa penugasan kelas, tapi banyak model memakai
+   pola `if (! empty($kelas_ids)) where_in(...)` — array kosong membuat kondisi ini `FALSE`
+   sehingga filter dilewati sepenuhnya (bukan "tanpa hasil"). **Fix di sumber**: 
+   `MY_Controller::_load_kelas_diizinkan()` dan `MY_API_Controller::_load_kelas_diizinkan()`
+   sekarang mengisi sentinel `[-1]` (id yang mustahil match) jika guru tidak punya kelas,
+   bukan array kosong — memperbaiki SEMUA titik pemakaian sekaligus tanpa tambal satu-satu.
+2. **H2 — IDOR di `Progress.php` (web).** Guru bisa lihat progress siswa kelas lain via
+   `?nisn=...` tanpa validasi, tidak konsisten dengan `api/Progress.php` yang sudah benar.
+   **Fix**: tambah validasi `in_array($siswa_aktif->kelas_id, $this->kelas_diizinkan)`, sama
+   seperti versi API.
+3. **H3 — Aksi destruktif via GET (rentan CSRF).** `users/hapus`, `users/reset-password`,
+   `kelas/hapus`, `setoran/hapus` semua diakses via `<a href>` (GET), padahal proteksi CSRF
+   CI3 hanya berlaku untuk POST. **Fix**: 4 method controller kini menolak request non-POST
+   (`405 Method Not Allowed`), dan semua link terkait di view diganti jadi `form_open()`/
+   `form_close()` (CSRF token otomatis ter-embed).
+4. **H4 — Login web tanpa rate limit.** `Login_attempt_model` sebelumnya cuma dipakai di
+   `api/Auth.php`. **Fix**: diintegrasikan juga ke `Auth::_process_login()` (web) — 5 percobaan
+   gagal per username+IP dalam 15 menit, sama seperti API.
+
+**Prioritas Menengah (semua diperbaiki):**
+
+5. **M1 — `encryption_key` hardcoded publik di `config.php`.** **Fix**: `Installer.php`
+   sekarang men-generate key acak (`random_bytes(32)`) dan menuliskannya ke `config.php` saat
+   instalasi, menggantikan placeholder.
+6. **M2 — Cookie & session tidak aman.** `cookie_httponly` sebelumnya `FALSE` (bisa dibaca
+   JS), `cookie_secure` selalu `FALSE`, session ID tidak diregenerasi saat login. **Fix**:
+   `cookie_httponly = TRUE`, `cookie_secure` otomatis mengikuti HTTPS, `sess_regenerate_destroy
+   = TRUE`, dan `$this->session->sess_regenerate(TRUE)` dipanggil saat login berhasil (mencegah
+   session fixation).
+7. **M3 — Tidak ada `.htaccess` deny-all di `application/`.** **Fix**: ditambahkan
+   `application/.htaccess`, konsisten dengan `system/.htaccess` yang sudah ada.
+8. **M4 — Parameter `limit`/`offset` API tanpa batas atas.** **Fix**: `limit` di-clamp ke
+   1–200 di `api/Setoran.php`, `api/Riwayat.php`, `api/Leaderboard.php`; `offset` dipaksa
+   non-negatif.
+9. **M5 — Upload audio cuma validasi ekstensi, tanpa cek konten MIME; `uploads/` tanpa
+   proteksi eksekusi script.** **Fix**: `Upload_handler::_do_upload()` sekarang menerima
+   parameter `allowed_mimes` generik (dipakai baik oleh `upload_foto_profil()` maupun
+   `upload_audio_setoran()`) dan memvalidasi via `finfo` setelah upload, menghapus file kalau
+   MIME tidak cocok. Ditambahkan juga `uploads/.htaccess` yang menonaktifkan eksekusi PHP/CGI
+   di folder tersebut (defense-in-depth).
+10. **M6 — Formula injection pada export Excel.** Data user (catatan, nama surat, dst.) yang
+    diawali `=`, `+`, `-`, atau `@` bisa dieksekusi sebagai formula saat file dibuka di Excel.
+    **Fix**: ditambahkan `Excel_exporter::sanitize_formula()`, dipakai di kedua format export
+    (xlsx & xml legacy) sebelum nilai teks ditulis ke cell.
+
+**Temuan Rendah** (dari laporan, belum ditindaklanjuti — didokumentasikan untuk referensi
+lanjutan, bukan diabaikan): `csrf_exclude_uris` redundan, `log_threshold = 0` (logging mati),
+CDN Tailwind dev di production, password reset default `123456` tampil plaintext di flash
+message (dianggap tidak kritis karena valuenya memang publik/terdokumentasi di kode), file
+yatim saat upload sukses tapi insert DB gagal, admin bisa hapus/reset admin lain tanpa proteksi
+tambahan.
+
+### 9b. Verifikasi
+
+Semua file yang diedit diverifikasi seimbang secara brace/paren (PHP interpreter tidak
+tersedia di environment pengerjaan — verifikasi murni analisis statis, BELUM diuji jalan
+nyata). **Wajib jalankan `php -l` di environment yang punya PHP dan uji end-to-end sebelum
+deploy ke production**, terutama untuk:
+- Alur login (regenerasi session, rate limiting) — pastikan tidak accidentally logout user sah.
+- Alur hapus/reset user, kelas, setoran — pastikan form POST + tombol berfungsi normal di browser.
+- Upload audio & foto profil — pastikan file valid tetap bisa lolos validasi MIME baru (jangan
+  sampai terlalu ketat menolak file sah).
+- Instalasi baru — pastikan `encryption_key` benar-benar ter-generate acak per instalasi,
+  bukan tetap placeholder karena regex tidak match.

@@ -51,11 +51,11 @@
 								<?php echo form_close(); ?>
 							</td>
 							<td class="px-5 py-3.5 text-right">
-								<a href="<?php echo site_url('kelas/hapus/' . $k->id); ?>"
-									onclick="return confirm('Hapus kelas <?php echo htmlspecialchars(addslashes($k->nama_kelas)); ?>?');"
-									class="text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-medium transition">
-									<i class="fa-solid fa-trash mr-1"></i> Hapus
-								</a>
+								<?php echo form_open('kelas/hapus/' . $k->id, array('onsubmit' => "return confirm('Hapus kelas " . htmlspecialchars(addslashes($k->nama_kelas)) . "?');")); ?>
+									<button type="submit" class="text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-lg text-xs font-medium transition">
+										<i class="fa-solid fa-trash mr-1"></i> Hapus
+									</button>
+								<?php echo form_close(); ?>
 							</td>
 						</tr>
 					<?php endforeach; ?>
