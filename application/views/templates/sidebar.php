@@ -12,7 +12,7 @@
 		<div class="flex items-center justify-between mb-6 px-2">
 			<div class="flex items-center gap-2.5 min-w-0">
 				<?php if (! empty($app_settings['institution_logo']) && file_exists('./' . $app_settings['institution_logo'])): ?>
-					<img src="<?php echo base_url($app_settings['institution_logo']); ?>" alt="Logo" class="w-8 h-8 rounded-lg object-contain bg-white/10 p-0.5 flex-shrink-0">
+					<img src="<?php echo htmlspecialchars(base_url($app_settings['institution_logo'])); ?>" alt="Logo" class="w-8 h-8 rounded-lg object-contain bg-white/10 p-0.5 flex-shrink-0">
 				<?php else: ?>
 					<span class="text-2xl flex-shrink-0">📖</span>
 				<?php endif; ?>

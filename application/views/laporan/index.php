@@ -73,7 +73,7 @@
 						<tr class="hover:bg-gray-50/50 transition">
 							<td class="px-5 py-4 whitespace-nowrap">
 								<div class="font-semibold text-gray-800"><?php echo htmlspecialchars($row->nama_siswa); ?></div>
-								<div class="text-xs text-gray-400">NISN: <?php echo $row->nisn; ?></div>
+								<div class="text-xs text-gray-400">NISN: <?php echo htmlspecialchars($row->nisn); ?></div>
 							</td>
 							<td class="px-5 py-4 whitespace-nowrap text-gray-700 font-medium">
 								Kelas <?php echo htmlspecialchars($row->nama_kelas); ?>

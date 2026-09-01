@@ -11,7 +11,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Masuk - <?php echo htmlspecialchars($short_name); ?></title>
 	<?php if ($logo_url): ?>
-		<link rel="icon" type="image/png" href="<?php echo $logo_url; ?>">
+		<link rel="icon" type="image/png" href="<?php echo htmlspecialchars($logo_url); ?>">
 	<?php else: ?>
 		<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>">
 	<?php endif; ?>
@@ -35,7 +35,7 @@
 			<div class="text-center mb-8">
 				<div class="flex justify-center mb-4">
 					<?php if ($logo_url): ?>
-						<img src="<?php echo $logo_url; ?>" alt="Logo" class="h-16 w-auto max-w-[140px] object-contain rounded-xl shadow-sm">
+						<img src="<?php echo htmlspecialchars($logo_url); ?>" alt="Logo" class="h-16 w-auto max-w-[140px] object-contain rounded-xl shadow-sm">
 					<?php else: ?>
 						<div class="w-16 h-16 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-3xl shadow-md shadow-emerald-600/20">
 							📖

@@ -90,7 +90,7 @@ class Users extends MY_Controller
 		$role = $this->input->post('role');
 
 		$this->form_validation->set_rules('nama', 'Nama', 'required|trim|max_length[100]');
-		$this->form_validation->set_rules('username', 'NIP/NISN', 'required|trim|max_length[50]');
+		$this->form_validation->set_rules('username', 'NIP/NISN', 'required|trim|max_length[50]|alpha_dash');
 		$this->form_validation->set_rules('role', 'Role', 'required|in_list[admin,guru,siswa]');
 
 		if (! $id) {

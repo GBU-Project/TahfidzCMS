@@ -16,7 +16,7 @@
 				<div class="relative">
 					<div class="w-24 h-24 rounded-2xl overflow-hidden bg-gray-100 border-2 border-emerald-500 flex items-center justify-center text-gray-400 text-3xl font-bold">
 						<?php if (! empty($user->foto) && file_exists('./' . $user->foto)): ?>
-							<img src="<?php echo base_url($user->foto); ?>" alt="Foto" class="w-full h-full object-cover">
+							<img src="<?php echo htmlspecialchars(base_url($user->foto)); ?>" alt="Foto" class="w-full h-full object-cover">
 						<?php else: ?>
 							<i class="fa-solid fa-user"></i>
 						<?php endif; ?>

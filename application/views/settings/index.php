@@ -18,7 +18,7 @@
 					<div class="text-xs font-semibold text-gray-500 mb-2">Logo Saat Ini</div>
 					<div class="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-white border-2 border-dashed border-emerald-300 p-2 flex items-center justify-center overflow-hidden shadow-sm">
 						<?php if (! empty($settings['institution_logo']) && file_exists('./' . $settings['institution_logo'])): ?>
-							<img id="logo-preview" src="<?php echo base_url($settings['institution_logo']); ?>" alt="Logo Lembaga" class="max-w-full max-h-full object-contain">
+							<img id="logo-preview" src="<?php echo htmlspecialchars(base_url($settings['institution_logo'])); ?>" alt="Logo Lembaga" class="max-w-full max-h-full object-contain">
 						<?php else: ?>
 							<div id="logo-preview-placeholder" class="text-center text-emerald-600">
 								<span class="text-3xl block mb-1">📖</span>

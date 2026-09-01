@@ -105,7 +105,7 @@
 							</td>
 							<td class="px-5 py-4 whitespace-nowrap">
 								<div class="font-semibold text-gray-800"><?php echo htmlspecialchars($row->nama); ?></div>
-								<div class="text-xs text-gray-400">NISN: <?php echo $row->nisn; ?></div>
+								<div class="text-xs text-gray-400">NISN: <?php echo htmlspecialchars($row->nisn); ?></div>
 							</td>
 							<td class="px-5 py-4 whitespace-nowrap text-gray-700">
 								Kelas <?php echo htmlspecialchars($row->nama_kelas); ?>

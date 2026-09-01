@@ -111,6 +111,9 @@ Setelah instalasi selesai, Super Admin dapat langsung menyesuaikan branding seko
 Seluruh dokumen arsitektur dan pengujian tersimpan rapi di direktori **[`docs/`](docs/)**:
 - [Panduan Instalasi & Deployment](docs/INSTALLATION.md)
 - [Blueprint Arsitektur Sistem](docs/BLUEPRINT.md)
+- [Petunjuk Lanjutan & Fitur](docs/PETUNJUK_LANJUTAN.md)
+- [Petunjuk Hardening Keamanan](docs/PETUNJUK_LANJUTAN_SECURITY.md)
+- [Petunjuk Mitigasi XSS & Audit](docs/PETUNJUK_LANJUTAN_XSS.md)
 - [Laporan Audit QA & Regresi Keamanan](docs/QA_REGRESSION.md)
 - [Rencana UAT (User Acceptance Testing)](docs/UAT_TEST_PLAN.md)
 - [Rencana Pengujian Identitas Lembaga & Branding](docs/BRANDING_TEST_PLAN.md)

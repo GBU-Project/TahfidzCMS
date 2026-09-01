@@ -8,7 +8,7 @@
 	
 	<!-- Favicon -->
 	<?php if (! empty($settings['institution_logo']) && file_exists('./' . $settings['institution_logo'])): ?>
-		<link rel="icon" type="image/png" href="<?php echo base_url($settings['institution_logo']); ?>">
+		<link rel="icon" type="image/png" href="<?php echo htmlspecialchars(base_url($settings['institution_logo'])); ?>">
 	<?php else: ?>
 		<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>">
 	<?php endif; ?>
@@ -43,7 +43,7 @@
 			<!-- Brand / Logo -->
 			<a href="<?php echo site_url(); ?>" class="flex items-center gap-3 group">
 				<?php if (! empty($settings['institution_logo']) && file_exists('./' . $settings['institution_logo'])): ?>
-					<img src="<?php echo base_url($settings['institution_logo']); ?>" alt="Logo <?php echo htmlspecialchars($settings['institution_short_name']); ?>" class="h-11 w-auto max-w-[140px] object-contain rounded-lg">
+					<img src="<?php echo htmlspecialchars(base_url($settings['institution_logo'])); ?>" alt="Logo <?php echo htmlspecialchars($settings['institution_short_name']); ?>" class="h-11 w-auto max-w-[140px] object-contain rounded-lg">
 				<?php else: ?>
 					<div class="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl shadow-md shadow-emerald-600/20 group-hover:scale-105 transition">
 						📖
@@ -99,7 +99,7 @@
 			<?php if (! empty($settings['institution_logo']) && file_exists('./' . $settings['institution_logo'])): ?>
 				<div class="flex justify-center mb-6">
 					<div class="p-3 bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 max-w-[120px] max-h-[120px] flex items-center justify-center">
-						<img src="<?php echo base_url($settings['institution_logo']); ?>" alt="<?php echo htmlspecialchars($settings['institution_name']); ?>" class="max-h-20 w-auto object-contain">
+						<img src="<?php echo htmlspecialchars(base_url($settings['institution_logo'])); ?>" alt="<?php echo htmlspecialchars($settings['institution_name']); ?>" class="max-h-20 w-auto object-contain">
 					</div>
 				</div>
 			<?php endif; ?>
@@ -429,7 +429,7 @@
 			<div class="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-slate-800">
 				<div class="flex items-center gap-3">
 					<?php if (! empty($settings['institution_logo']) && file_exists('./' . $settings['institution_logo'])): ?>
-						<img src="<?php echo base_url($settings['institution_logo']); ?>" alt="Logo" class="h-9 w-auto max-w-[120px] object-contain rounded">
+						<img src="<?php echo htmlspecialchars(base_url($settings['institution_logo'])); ?>" alt="Logo" class="h-9 w-auto max-w-[120px] object-contain rounded">
 					<?php else: ?>
 						<span class="text-2xl">📖</span>
 					<?php endif; ?>

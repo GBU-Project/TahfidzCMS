@@ -27,8 +27,8 @@
 					<select name="nisn" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
 						<option value="">-- Semua Santri --</option>
 						<?php foreach ($siswa_list as $s): ?>
-							<option value="<?php echo $s->nisn; ?>" <?php echo ($selected_nisn === $s->nisn) ? 'selected' : ''; ?>>
-								<?php echo htmlspecialchars($s->nama); ?> (<?php echo $s->nisn; ?>)
+							<option value="<?php echo htmlspecialchars($s->nisn); ?>" <?php echo ($selected_nisn === $s->nisn) ? 'selected' : ''; ?>>
+								<?php echo htmlspecialchars($s->nama); ?> (<?php echo htmlspecialchars($s->nisn); ?>)
 							</option>
 						<?php endforeach; ?>
 					</select>
@@ -112,7 +112,7 @@
 							<?php if ($role !== 'siswa'): ?>
 								<td class="px-5 py-4 whitespace-nowrap">
 									<div class="font-semibold text-gray-800"><?php echo htmlspecialchars($row->nama_siswa); ?></div>
-									<div class="text-xs text-gray-400">Kelas <?php echo htmlspecialchars($row->nama_kelas); ?> (<?php echo $row->nisn; ?>)</div>
+									<div class="text-xs text-gray-400">Kelas <?php echo htmlspecialchars($row->nama_kelas); ?> (<?php echo htmlspecialchars($row->nisn); ?>)</div>
 								</td>
 							<?php endif; ?>
 							<td class="px-5 py-4 whitespace-nowrap">

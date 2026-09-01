@@ -43,7 +43,7 @@
 					<tr class="hover:bg-gray-50/50 transition">
 						<td class="px-5 py-3.5 font-medium flex items-center gap-3">
 							<?php if (! empty($u->foto)): ?>
-								<img src="<?php echo base_url($u->foto); ?>" class="w-9 h-9 rounded-xl object-cover border border-gray-200">
+								<img src="<?php echo htmlspecialchars(base_url($u->foto)); ?>" class="w-9 h-9 rounded-xl object-cover border border-gray-200">
 							<?php else: ?>
 								<div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
 									<?php echo strtoupper(substr($u->nama, 0, 1)); ?>

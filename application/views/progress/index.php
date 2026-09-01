@@ -13,7 +13,7 @@
 				<label class="block text-xs font-medium text-gray-600 mb-1">Pilih Santri</label>
 				<select name="nisn" onchange="this.form.submit()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
 					<?php foreach ($siswa_list as $s): ?>
-						<option value="<?php echo $s->nisn; ?>" <?php echo ($selected_nisn === $s->nisn) ? 'selected' : ''; ?>>
+						<option value="<?php echo htmlspecialchars($s->nisn); ?>" <?php echo ($selected_nisn === $s->nisn) ? 'selected' : ''; ?>>
 							<?php echo htmlspecialchars($s->nama); ?> (Kelas <?php echo htmlspecialchars($s->nama_kelas); ?>)
 						</option>
 					<?php endforeach; ?>
@@ -34,7 +34,7 @@
 				<div>
 					<h2 class="text-xl font-bold text-gray-800"><?php echo htmlspecialchars($siswa_aktif->nama); ?></h2>
 					<div class="text-sm text-gray-500">
-						NISN: <span class="font-mono text-gray-700"><?php echo $siswa_aktif->nisn; ?></span> &bull; 
+						NISN: <span class="font-mono text-gray-700"><?php echo htmlspecialchars($siswa_aktif->nisn); ?></span> &bull; 
 						Kelas: <span class="font-medium text-gray-700"><?php echo htmlspecialchars($siswa_aktif->nama_kelas); ?></span>
 					</div>
 					<div class="mt-1 flex items-center gap-2">

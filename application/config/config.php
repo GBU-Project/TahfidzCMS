@@ -110,7 +110,7 @@ $config['allow_get_array'] = TRUE;
 | 3 = Informational Messages
 | 4 = All Messages
 */
-$config['log_threshold'] = 0;
+$config['log_threshold'] = 1; // 1 = Error Messages saja — cukup untuk audit trail tanpa membanjiri log
 
 /*
 |--------------------------------------------------------------------------
@@ -220,16 +220,12 @@ $config['csrf_token_name']   = 'csrf_tahfidz_token';
 $config['csrf_cookie_name']  = 'csrf_tahfidz_cookie';
 $config['csrf_expire']       = 7200;
 $config['csrf_regenerate']   = TRUE;
+// Semua endpoint di bawah application/controllers/api/ dikecualikan dari
+// proteksi CSRF karena memakai Bearer Token (stateless), bukan session cookie.
+// 'api/.*' saja sudah mencakup semua sub-path api/*, entri per-endpoint yang
+// sebelumnya ada di sini redundan dan dihapus.
 $config['csrf_exclude_uris'] = array(
 	'api/.*',
-	'api/auth/login',
-	'api/auth/logout',
-	'api/setoran',
-	'api/setoran/simpan',
-	'api/riwayat',
-	'api/progress',
-	'api/leaderboard',
-	'api/dashboard',
 );
 
 /*

@@ -423,3 +423,57 @@ deploy ke production**, terutama untuk:
   sampai terlalu ketat menolak file sah).
 - Instalasi baru — pastikan `encryption_key` benar-benar ter-generate acak per instalasi,
   bukan tetap placeholder karena regex tidak match.
+
+---
+
+## 10. Fase 10 — Follow-up Review: XSS Output Escaping ✅ *(selesai)*
+
+Review lanjutan setelah Fase 9 menemukan bahwa perbaikan sebelumnya belum menyentuh
+beberapa titik output NISN & path logo/foto yang tidak di-escape, walau `judul` perbaikan
+sebelumnya menyebut "XSS filtering". Diverifikasi ulang satu-satu, dan ternyata **risikonya
+lebih nyata dari yang terlihat sekilas**: field NISN (=`username` di tabel `users`) sebelumnya
+HANYA divalidasi `required|trim|max_length[50]` — tanpa pembatasan karakter — sehingga admin
+(satu-satunya role yang boleh membuat user, via `require_role(['admin'])`) bisa menanam
+payload XSS ke NISN, yang kemudian tersimpan dan dirender tanpa escape ke pengguna lain
+(admin lain, guru) yang membuka halaman terkait. Ini stored XSS yang butuh privilege admin
+untuk dieksploitasi (bukan XSS publik tanpa auth), tapi tetap relevan untuk skenario
+multi-admin / akun admin yang di-compromise.
+
+**Perbaikan (output escaping, 14 titik di 11 file):**
+- NISN: `leaderboard/index.php`, `progress/index.php` (2 titik), `riwayat/index.php`
+  (3 titik), `laporan/index.php` — ditambahkan `htmlspecialchars()`.
+- Path logo/foto (konteks atribut `src`/`href`): `profile/index.php`, `templates/header.php`,
+  `templates/sidebar.php`, `users/index.php`, `landing/index.php` (4 titik), `settings/index.php`,
+  `auth/login.php` (2 titik) — ditambahkan `htmlspecialchars()` di sekitar `base_url(...)`.
+  Risiko titik-titik ini sebenarnya rendah (path digenerate server dengan nama file acak via
+  `Upload_handler` `encrypt_name => TRUE`), tapi tetap diperbaiki sebagai defense-in-depth &
+  konsistensi.
+
+**Perbaikan di sumber (defense-in-depth):**
+- `Users::simpan()` — rule validasi `username` (=NISN/NIP) diperketat dari
+  `required|trim|max_length[50]` menjadi `+ alpha_dash` (hanya huruf, angka, underscore,
+  dash) — payload XSS tidak akan lolos validasi sejak awal, bukan cuma ditangkal saat
+  output.
+
+**Perbaikan tambahan (temuan Rendah dari audit awal yang ternyata cepat diperbaiki):**
+- `csrf_exclude_uris` — dibersihkan dari 8 entri redundan jadi 1 (`api/.*` sudah cukup).
+- `log_threshold` — diaktifkan dari `0` (mati total) jadi `1` (Error Messages saja).
+  **Catatan penting**: folder `application/logs/` sebelumnya TIDAK ADA sama sekali di
+  repo — kalau logging diaktifkan tanpa folder ini, CI3 akan gagal/warning saat menulis
+  log. Folder sudah dibuat + `index.html` placeholder (konsisten dengan pola di
+  `.gitignore` yang sudah menyebut file ini).
+
+**Belum ditindaklanjuti (disengaja, di luar scope follow-up ini):**
+- `encryption_key` acak hanya berlaku untuk instalasi BARU (via installer). Instalasi
+  existing tetap pakai key lama sampai diregenerasi manual — lihat
+  `PETUNJUK_LANJUTAN_SECURITY.md`. Membuat fitur "Regenerate Key" di halaman Settings
+  adalah pekerjaan terpisah (lebih besar scope-nya), belum dikerjakan.
+- `global_xss_filtering` tetap `FALSE`. Ini keputusan sadar, BUKAN kelalaian: mengaktifkan
+  filter XSS global CI3 adalah praktik lama yang cenderung tidak reliable (mudah di-bypass,
+  bisa merusak data sah) dibanding output escaping kontekstual yang konsisten (`htmlspecialchars()`
+  di titik render) — yang sudah diterapkan di seluruh view sejauh diaudit. Kalau nanti
+  ditemukan titik output lain yang lolos, tambal di titik itu, bukan menyalakan filter global.
+- CDN `cdn.tailwindcss.com`, password reset default `123456` di flash message, file yatim
+  saat insert gagal — tetap seperti sebelumnya, didokumentasikan di Fase 9 §9a bagian
+  "Temuan Rendah", belum ditindaklanjuti karena dianggap risiko rendah & butuh keputusan
+  produk (mis. ganti CDN ke build lokal Tailwind = perubahan build process, bukan quick fix).
