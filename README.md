@@ -58,8 +58,7 @@ TahfidzCMS/
 │   ├── BRANDING_TEST_PLAN.md# Rencana pengujian modul identitas lembaga
 │   ├── INSTALLATION.md      # Panduan instalasi dan deployment
 │   ├── INSTALLER_TEST_PLAN.md# Rencana uji Web Installer interaktif
-│   ├── QA_REGRESSION.md     # Laporan audit regresi dan keamanan
-│   └── UAT_TEST_PLAN.md     # Skenario pengujian User Acceptance Testing
+│   └── QA_REGRESSION.md     # Laporan audit regresi dan keamanan
 ├── uploads/                 # Direktori penyimpanan berkas upload
 │   ├── branding/            # Logo lembaga
 │   ├── profile/             # Foto profil pengguna
@@ -115,7 +114,6 @@ Seluruh dokumen arsitektur dan pengujian tersimpan rapi di direktori **[`docs/`]
 - [Petunjuk Hardening Keamanan](docs/PETUNJUK_LANJUTAN_SECURITY.md)
 - [Petunjuk Mitigasi XSS & Audit](docs/PETUNJUK_LANJUTAN_XSS.md)
 - [Laporan Audit QA & Regresi Keamanan](docs/QA_REGRESSION.md)
-- [Rencana UAT (User Acceptance Testing)](docs/UAT_TEST_PLAN.md)
 - [Rencana Pengujian Identitas Lembaga & Branding](docs/BRANDING_TEST_PLAN.md)
 - [Rencana Pengujian Web Installer](docs/INSTALLER_TEST_PLAN.md)
 
