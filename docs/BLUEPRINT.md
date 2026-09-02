@@ -477,3 +477,75 @@ multi-admin / akun admin yang di-compromise.
   saat insert gagal — tetap seperti sebelumnya, didokumentasikan di Fase 9 §9a bagian
   "Temuan Rendah", belum ditindaklanjuti karena dianggap risiko rendah & butuh keputusan
   produk (mis. ganti CDN ke build lokal Tailwind = perubahan build process, bukan quick fix).
+
+---
+
+## 11. Fase 11 — Rapor Publik (Orangtua) & Statistik Publik (Jamaah) ✅ *(selesai)*
+
+Dua fitur terpisah hasil diskusi produk, berbeda model akses & cakupan data — **jangan
+digabung** kalau ada perubahan lanjutan, karena batasan privasi keduanya berbeda:
+
+### 11a. Rapor Publik — untuk orangtua/wali santri (data individual)
+
+- **Akses**: link unik `/rapor/{token}`, TANPA login. Token 32 karakter hex acak
+  (`bin2hex(random_bytes(16))`), disimpan di kolom baru `siswa.access_token`.
+- **Kenapa token, bukan NISN**: NISN polanya sering berurutan/gampang ditebak (apalagi
+  setelah temuan Fase 10 bahwa NISN tidak divalidasi numerik ketat) — token acak 128-bit
+  jauh lebih aman dari brute-force/guessing.
+- **Privasi**: identitas ditampilkan HANYA nama depan + kelas (bukan nama lengkap/NISN).
+  **Tidak ada** ranking/posisi leaderboard — keputusan produk untuk menghindari tekanan
+  sosial pada anak.
+- **Konten**: progress 30 juz (grid visual), tren skor 30 setoran terakhir (line chart),
+  distribusi kualitas L/CL/KL/TL (donut chart), riwayat 10 setoran terbaru.
+- **Berbagi link**: admin buka halaman Kelola Users (`/users?role=siswa`), tombol
+  "Buat Rapor" (generate token pertama kali) atau "Rapor" (kalau token sudah ada) membuka
+  modal berisi link (copy-able) + kode QR (via `qrcodejs` CDN) + tombol "Regenerasi Tautan"
+  (invalidate token lama, generate baru — dipakai kalau link dianggap bocor).
+- **File baru**: `Rapor.php` (controller publik), `views/rapor/index.php`.
+- **File diubah**: `Siswa_model.php` (+`generate_access_token()`, `+get_by_token()`),
+  `Setoran_model.php` (+3 fungsi query individual), `User_model.php`
+  (`get_all_by_role()` di-join ke `siswa` utk ambil `access_token`), `Users.php`
+  (+`generate_rapor_token()`, wajib POST), `users/index.php` (tombol + modal share),
+  `routes.php` (+`rapor/(:any)`), skema DB (+kolom `access_token`, lihat
+  `migration_rapor_publik.sql` untuk instalasi existing).
+
+### 11b. Statistik Publik — untuk jamaah/komunitas masjid (data agregat)
+
+- **Akses**: `/statistik`, publik penuh, tanpa token/login sama sekali.
+- **PENTING (batasan privasi)**: halaman & query di baliknya **HARUS** tetap murni
+  agregat se-sekolah. **TIDAK BOLEH** menampilkan nama siswa, NISN, atau ranking
+  individual apapun — kalau ada penambahan data di controller `Statistik.php` nanti,
+  pertahankan batasan ini (sudah ditulis eksplisit di docblock controller).
+- **Konten**: total santri, total kelas, total setoran (bulan ini & keseluruhan), tren
+  jumlah setoran 6 bulan terakhir (bar chart), distribusi kualitas L/CL/KL/TL se-sekolah
+  (donut chart).
+- **Ditemukan dari landing page**: 1 link kecil "Statistik" ditambahkan di nav.
+- **File baru**: `Statistik.php` (controller publik), `views/statistik/index.php`.
+- **File diubah**: `Setoran_model.php` (+4 fungsi query agregat: `get_keterangan_distribution_global()`,
+  `get_tren_bulanan_global()`, `get_ringkasan_global()`), `routes.php` (+`statistik`),
+  `landing/index.php` (+1 link nav).
+
+### 11c. Library baru
+
+- **Chart.js** (v4.4.0, via `cdnjs.cloudflare.com`) — dipakai di kedua halaman publik
+  untuk line/bar/doughnut chart. Belum pernah dipakai di project sebelumnya (fase-fase
+  lain tidak butuh chart), jadi ini precedent pertama.
+- **qrcodejs** (v1.0.0, via `cdnjs.cloudflare.com`) — generate QR code sisi client
+  untuk modal share rapor di `users/index.php`.
+
+### 11d. Catatan keamanan & yang perlu diuji manual
+
+- Token divalidasi format (`^[a-f0-9]{32}$`) di `Rapor::index()` sebelum query DB — 404
+  langsung untuk token salah format, tidak membocorkan info valid/tidaknya token via
+  timing atau pesan error berbeda.
+- `Users::generate_rapor_token()` wajib POST (konsisten dengan pola fix H3 di Fase 9),
+  form pemicu di `users/index.php` dibuat via `form_open()` (CSRF token otomatis),
+  termasuk untuk tombol "Regenerasi" di modal (submit form hidden yang sama, BUKAN
+  form terpisah tanpa CSRF — sempat jadi bug saat development, sudah diperbaiki
+  sebelum selesai).
+- **Belum diuji end-to-end** (PHP interpreter tidak tersedia di environment kerja):
+  - [ ] Generate token pertama kali → link `/rapor/{token}` benar-benar bisa dibuka & menampilkan data yang benar.
+  - [ ] Regenerasi token → token LAMA benar-benar tidak lagi bisa dipakai (404).
+  - [ ] Kode QR ter-generate dengan benar & bisa di-scan HP sungguhan.
+  - [ ] Halaman `/statistik` tidak error saat database masih kosong (belum ada setoran sama sekali) — cek pembagian nol / array kosong di chart.
+  - [ ] Siswa yang BELUM pernah dibuatkan token (`access_token IS NULL`) — pastikan tombol "Buat Rapor" muncul dengan benar, bukan malah error.

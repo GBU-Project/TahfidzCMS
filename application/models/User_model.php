@@ -79,9 +79,13 @@ class User_model extends CI_Model
 
 	public function get_all_by_role($role = null)
 	{
+		$this->db->select('users.*, siswa.access_token, siswa.nisn as siswa_nisn')
+			->from($this->table)
+			->join('siswa', 'siswa.user_id = users.id', 'left');
+
 		if ($role) {
-			$this->db->where('role', $role);
+			$this->db->where('users.role', $role);
 		}
-		return $this->db->get($this->table)->result();
+		return $this->db->get()->result();
 	}
 }

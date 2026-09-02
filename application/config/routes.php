@@ -17,6 +17,10 @@ $route['translate_uri_dashes'] = FALSE;
 // WEB ROUTES
 // ---------------------------------------------------------------
 $route['landing']          = 'landing/index';
+
+// Rapor publik (orangtua, via token) & Statistik publik (jamaah, agregat)
+$route['rapor/(:any)']     = 'rapor/index/$1';
+$route['statistik']        = 'statistik/index';
 $route['installer']        = 'installer/index';
 $route['installer/(:any)'] = 'installer/$1';
 

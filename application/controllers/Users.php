@@ -253,4 +253,38 @@ class Users extends MY_Controller
 		$this->session->set_flashdata('success', "Password untuk akun " . htmlspecialchars($user->nama) . " (" . htmlspecialchars($user->username) . ") berhasil di-reset menjadi: {$default_password}");
 		redirect('users');
 	}
+
+	/**
+	 * POST /users/generate-rapor-token/(:num)
+	 * Generate (atau regenerate) token akses rapor publik untuk siswa
+	 * dengan users.id = $id. Dipanggil dari tombol "Bagikan ke Orangtua" /
+	 * "Regenerasi Link" di halaman Kelola Users. Wajib POST (konsisten
+	 * dengan aksi lain yang mengubah state).
+	 */
+	public function generate_rapor_token($id)
+	{
+		if ($this->input->method() !== 'post') {
+			show_error('Method tidak diizinkan.', 405, 'Method Not Allowed');
+			return;
+		}
+
+		$user = $this->User_model->get_by_id($id);
+
+		if (! $user || $user->role !== 'siswa') {
+			show_404();
+			return;
+		}
+
+		$siswa = $this->Siswa_model->get_by_user_id($id);
+		if (! $siswa) {
+			$this->session->set_flashdata('error', 'Data siswa untuk akun ini tidak ditemukan.');
+			redirect('users?role=siswa');
+			return;
+		}
+
+		$this->Siswa_model->generate_access_token($siswa->nisn);
+
+		$this->session->set_flashdata('success', 'Tautan rapor untuk ' . htmlspecialchars($user->nama) . ' berhasil di-generate ulang.');
+		redirect('users?role=siswa');
+	}
 }

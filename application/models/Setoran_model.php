@@ -467,5 +467,154 @@ class Setoran_model extends CI_Model
 
 		return $this->db->get()->result();
 	}
+
+	// =====================================================================
+	// Fitur Rapor Publik (untuk orangtua, via token — lihat controller Rapor)
+	// =====================================================================
+
+	/**
+	 * Tren skor setoran seorang siswa dari waktu ke waktu, untuk line chart
+	 * di halaman rapor publik. Diurutkan tanggal ASC supaya grafik terbaca
+	 * kiri->kanan sebagai timeline maju, dan dibatasi $limit data TERBARU
+	 * (diambil dari ekor lalu dibalik) supaya grafik tidak terlalu padat
+	 * kalau riwayat setoran sudah sangat banyak.
+	 *
+	 * @param string $nisn
+	 * @param int    $limit
+	 * @return array [['tanggal' => 'Y-m-d', 'skor' => int], ...]
+	 */
+	public function get_skor_trend_by_nisn($nisn, $limit = 30)
+	{
+		$rows = $this->db->select('tanggal, skor')
+			->from($this->table)
+			->where('nisn', $nisn)
+			->order_by('tanggal', 'DESC')
+			->order_by('id', 'DESC')
+			->limit($limit)
+			->get()
+			->result();
+
+		return array_reverse($rows);
+	}
+
+	/**
+	 * Distribusi jumlah setoran per kode keterangan (L/CL/KL/TL) untuk
+	 * seorang siswa, untuk donut chart di halaman rapor publik.
+	 *
+	 * @param string $nisn
+	 * @return array ['L' => int, 'CL' => int, 'KL' => int, 'TL' => int]
+	 */
+	public function get_keterangan_distribution_by_nisn($nisn)
+	{
+		$rows = $this->db->select('keterangan, COUNT(id) as jumlah')
+			->from($this->table)
+			->where('nisn', $nisn)
+			->group_by('keterangan')
+			->get()
+			->result();
+
+		$dist = array('L' => 0, 'CL' => 0, 'KL' => 0, 'TL' => 0);
+		foreach ($rows as $r) {
+			if (isset($dist[$r->keterangan])) {
+				$dist[$r->keterangan] = (int) $r->jumlah;
+			}
+		}
+		return $dist;
+	}
+
+	/**
+	 * Riwayat setoran terbaru seorang siswa (ringkas, untuk daftar di
+	 * halaman rapor publik — bukan tabel lengkap seperti Riwayat.php).
+	 *
+	 * @param string $nisn
+	 * @param int    $limit
+	 * @return array
+	 */
+	public function get_recent_by_nisn($nisn, $limit = 10)
+	{
+		return $this->db->select('tanggal, juz, surat, ayat_dari, ayat_sampai, jenis_setoran, keterangan, skor')
+			->from($this->table)
+			->where('nisn', $nisn)
+			->order_by('tanggal', 'DESC')
+			->order_by('id', 'DESC')
+			->limit($limit)
+			->get()
+			->result();
+	}
+
+	// =====================================================================
+	// Fitur Statistik Publik (untuk jamaah/komunitas masjid — agregat SAJA,
+	// tidak boleh mengembalikan data identifiable per-siswa. Lihat controller
+	// Statistik.)
+	// =====================================================================
+
+	/**
+	 * Distribusi jumlah setoran per kode keterangan (L/CL/KL/TL) SE-SEKOLAH
+	 * (bukan per siswa), untuk donut chart di halaman statistik publik.
+	 *
+	 * @return array ['L' => int, 'CL' => int, 'KL' => int, 'TL' => int]
+	 */
+	public function get_keterangan_distribution_global()
+	{
+		$rows = $this->db->select('keterangan, COUNT(id) as jumlah')
+			->from($this->table)
+			->group_by('keterangan')
+			->get()
+			->result();
+
+		$dist = array('L' => 0, 'CL' => 0, 'KL' => 0, 'TL' => 0);
+		foreach ($rows as $r) {
+			if (isset($dist[$r->keterangan])) {
+				$dist[$r->keterangan] = (int) $r->jumlah;
+			}
+		}
+		return $dist;
+	}
+
+	/**
+	 * Jumlah total setoran per bulan, N bulan terakhir, SE-SEKOLAH — untuk
+	 * bar/line chart tren di halaman statistik publik.
+	 *
+	 * @param int $bulan_terakhir
+	 * @return array [['bulan' => 'YYYY-MM', 'jumlah' => int], ...] terurut lama->baru
+	 */
+	public function get_tren_bulanan_global($bulan_terakhir = 6)
+	{
+		$mulai = date('Y-m-01', strtotime('-' . ($bulan_terakhir - 1) . ' months'));
+
+		$rows = $this->db->select("DATE_FORMAT(tanggal, '%Y-%m') as bulan, COUNT(id) as jumlah")
+			->from($this->table)
+			->where('tanggal >=', $mulai)
+			->group_by("DATE_FORMAT(tanggal, '%Y-%m')")
+			->order_by('bulan', 'ASC')
+			->get()
+			->result();
+
+		// Isi bulan yang kosong (tanpa setoran sama sekali) dengan 0, supaya
+		// grafik tidak "meloncat" melewati bulan yang datanya nihil.
+		$map = array();
+		foreach ($rows as $r) {
+			$map[$r->bulan] = (int) $r->jumlah;
+		}
+
+		$hasil = array();
+		for ($i = $bulan_terakhir - 1; $i >= 0; $i--) {
+			$key = date('Y-m', strtotime("-{$i} months"));
+			$hasil[] = array('bulan' => $key, 'jumlah' => isset($map[$key]) ? $map[$key] : 0);
+		}
+		return $hasil;
+	}
+
+	/**
+	 * Total jumlah setoran sepanjang masa & bulan berjalan, SE-SEKOLAH.
+	 *
+	 * @return array ['total' => int, 'bulan_ini' => int]
+	 */
+	public function get_ringkasan_global()
+	{
+		$total = $this->db->count_all_results($this->table);
+		$bulan_ini = $this->count_setoran_bulan_ini();
+		return array('total' => $total, 'bulan_ini' => $bulan_ini);
+	}
 }
 

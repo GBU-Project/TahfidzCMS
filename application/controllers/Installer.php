@@ -18,7 +18,7 @@ class Installer extends CI_Controller
 	public function __construct()
 	{
 		parent::__construct();
-		$this->lock_file = FCPATH . 'installed.lock';
+		$this->lock_file = APPPATH . 'config/installed.lock';
 		$this->_check_if_installed();
 	}
 
@@ -28,7 +28,7 @@ class Installer extends CI_Controller
 	 */
 	private function _check_if_installed()
 	{
-		if (file_exists($this->lock_file)) {
+		if (file_exists($this->lock_file) || file_exists(FCPATH . 'installed.lock')) {
 			show_error('Aplikasi TahfidzCMS sudah terinstall. Untuk alasan keamanan, installer dinonaktifkan.', 403, 'Akses Ditolak');
 			exit();
 		}

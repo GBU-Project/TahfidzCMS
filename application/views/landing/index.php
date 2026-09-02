@@ -63,6 +63,9 @@
 				<a href="#audiens" class="hover:text-emerald-600 transition">Untuk Siapa</a>
 				<a href="#alur" class="hover:text-emerald-600 transition">Alur Tahfidz</a>
 				<a href="#tentang" class="hover:text-emerald-600 transition">Tentang</a>
+				<a href="<?php echo site_url('statistik'); ?>" class="hover:text-emerald-600 transition">
+					<i class="fa-solid fa-chart-simple mr-1"></i> Statistik
+				</a>
 			</nav>
 
 			<!-- Action Button -->

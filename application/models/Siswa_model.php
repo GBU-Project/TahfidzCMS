@@ -142,5 +142,40 @@ class Siswa_model extends CI_Model
 
 		return $this->db->get()->result();
 	}
+
+	/**
+	 * Generate (atau regenerate) token akses rapor publik untuk siswa
+	 * tertentu. Dipanggil oleh admin/guru lewat tombol "Bagikan ke
+	 * Orangtua" / "Regenerasi Link" di halaman kelola siswa.
+	 *
+	 * Token 32 karakter hex (128-bit acak via random_bytes) — jauh lebih
+	 * aman ditebak dibanding NISN yang polanya sering berurutan.
+	 *
+	 * @param string $nisn
+	 * @return string Token baru yang tersimpan
+	 */
+	public function generate_access_token($nisn)
+	{
+		$token = bin2hex(random_bytes(16));
+		$this->db->update($this->table, array('access_token' => $token), array('nisn' => $nisn));
+		return $token;
+	}
+
+	/**
+	 * Ambil data siswa dari token akses rapor publik. Dipakai oleh
+	 * controller publik Rapor (tanpa login).
+	 *
+	 * @param string $token
+	 * @return object|null
+	 */
+	public function get_by_token($token)
+	{
+		return $this->db->select('siswa.*, kelas.nama_kelas')
+			->from($this->table)
+			->join('kelas', 'kelas.id = siswa.kelas_id', 'left')
+			->where('siswa.access_token', $token)
+			->get()
+			->row();
+	}
 }
 
