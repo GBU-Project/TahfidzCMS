@@ -1,6 +1,47 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+/**
+ * Deteksi apakah koneksi ASLI dari browser ke aplikasi ini adalah HTTPS.
+ *
+ * $_SERVER['HTTPS'] SAJA tidak cukup di belakang reverse proxy/tunnel
+ * (ngrok, nginx, load balancer, dst.) — proxy tsb menerima HTTPS dari
+ * browser tapi meneruskan ke server aplikasi sebagai HTTP polos, sehingga
+ * $_SERVER['HTTPS'] tidak pernah ter-set walau browser sungguhan HTTPS.
+ * Ini menyebabkan base_url()/site_url() salah generate 'http://' padahal
+ * halaman diakses via 'https://', memicu peringatan browser "This form is
+ * not secure" saat submit form (mixed content).
+ *
+ * Proxy yang benar akan mengirim header X-Forwarded-Proto: https untuk
+ * memberi tahu protokol ASLI dari sisi browser — kita cek header ini juga.
+ *
+ * CATATAN KEAMANAN: header X-Forwarded-* bisa dipalsukan klien jika
+ * aplikasi diekspos LANGSUNG ke internet tanpa reverse proxy tepercaya di
+ * depannya (tanpa proxy, siapapun bisa kirim header ini sendiri). Untuk
+ * deployment production dengan reverse proxy sungguhan (nginx/ngrok/dst),
+ * ini aman & perlu, karena proxy tsb yang menetapkan header ini, bukan
+ * klien. Kalau app pernah dipasang tanpa reverse proxy sama sekali (akses
+ * langsung ke port PHP), pertimbangkan hapus pengecekan X-Forwarded-Proto.
+ */
+if (! function_exists('tahfidzcms_is_https')) {
+	function tahfidzcms_is_https()
+	{
+		if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== '' && strtolower($_SERVER['HTTPS']) !== 'off') {
+			return TRUE;
+		}
+		if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
+			return TRUE;
+		}
+		if (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower($_SERVER['HTTP_X_FORWARDED_SSL']) === 'on') {
+			return TRUE;
+		}
+		if (isset($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443) {
+			return TRUE;
+		}
+		return FALSE;
+	}
+}
+
 /*
 |--------------------------------------------------------------------------
 | Base Site URL
@@ -14,7 +55,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | path and default port of your installation.
 |
 */
-$config['base_url'] = ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https://' : 'http://') . (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost') . rtrim(dirname(isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : ''), '/\\') . '/';
+$config['base_url'] = (tahfidzcms_is_https() ? 'https://' : 'http://') . (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost') . rtrim(dirname(isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : ''), '/\\') . '/';
 
 /*
 |--------------------------------------------------------------------------
@@ -191,9 +232,14 @@ $config['cookie_domain']	= '';
 $config['cookie_path']		= '/';
 // Fix keamanan: cookie_secure otomatis TRUE saat diakses via HTTPS (aman utk
 // dev lokal tanpa HTTPS, tapi wajib aktif di production yang selalu HTTPS).
+// Pakai tahfidzcms_is_https() (bukan cek $_SERVER['HTTPS'] langsung) supaya
+// tetap terdeteksi benar di belakang reverse proxy/tunnel (ngrok, nginx,
+// dst.) yang meneruskan request sebagai HTTP polos ke server aplikasi
+// walau browser sungguhan mengakses via HTTPS — lihat komentar lengkap di
+// fungsi tahfidzcms_is_https() di awal file ini.
 // cookie_httponly TRUE mencegah cookie dibaca lewat JavaScript (mitigasi XSS
 // terhadap pencurian session).
-$config['cookie_secure']	= (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+$config['cookie_secure']	= tahfidzcms_is_https();
 $config['cookie_httponly'] 	= TRUE;
 
 /*

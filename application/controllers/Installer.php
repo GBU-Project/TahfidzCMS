@@ -18,7 +18,7 @@ class Installer extends CI_Controller
 	public function __construct()
 	{
 		parent::__construct();
-		$this->lock_file = APPPATH . 'config/installed.lock';
+		$this->lock_file = FCPATH . 'installed.lock';
 		$this->_check_if_installed();
 	}
 
@@ -28,7 +28,7 @@ class Installer extends CI_Controller
 	 */
 	private function _check_if_installed()
 	{
-		if (file_exists($this->lock_file) || file_exists(FCPATH . 'installed.lock')) {
+		if (file_exists($this->lock_file)) {
 			show_error('Aplikasi TahfidzCMS sudah terinstall. Untuk alasan keamanan, installer dinonaktifkan.', 403, 'Akses Ditolak');
 			exit();
 		}
@@ -285,7 +285,11 @@ class Installer extends CI_Controller
 			return;
 		}
 
-		$current_base_url = ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
+		// Pakai tahfidzcms_is_https() (didefinisikan di application/config/config.php,
+		// sudah dimuat lebih dulu oleh bootstrap CI3) supaya deteksi HTTPS tetap
+		// benar di belakang reverse proxy/tunnel seperti ngrok — lihat komentar
+		// lengkap di fungsi tersebut.
+		$current_base_url = (tahfidzcms_is_https() ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/';
 
 		$data = array(
 			'title'       => 'Akun Super Admin & Konfigurasi - TahfidzCMS',

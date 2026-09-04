@@ -68,21 +68,45 @@
 				</a>
 			</nav>
 
-			<!-- Action Button -->
-			<div class="flex items-center gap-3">
+			<!-- Action Button & Mobile Menu Toggle -->
+			<div class="flex items-center gap-2 sm:gap-3">
 				<?php if ($is_logged_in): ?>
 					<a href="<?php echo site_url('dashboard'); ?>" 
-					   class="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm hover:shadow-md transition">
-						<i class="fa-solid fa-gauge-high"></i> Dashboard
+					   class="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-semibold px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl shadow-sm hover:shadow-md transition">
+						<i class="fa-solid fa-gauge-high"></i> <span class="hidden xs:inline">Dashboard</span>
 					</a>
 				<?php else: ?>
 					<a href="<?php echo site_url('login'); ?>" 
-					   class="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm hover:shadow-md transition">
-						<i class="fa-solid fa-right-to-bracket"></i> Masuk Sistem
+					   class="inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-semibold px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl shadow-sm hover:shadow-md transition">
+						<i class="fa-solid fa-right-to-bracket"></i> <span class="hidden xs:inline">Masuk</span>
 					</a>
 				<?php endif; ?>
+
+				<!-- Hamburger Button (Mobile Only) -->
+				<button id="mobileMenuBtn" type="button" class="md:hidden p-2.5 rounded-xl text-slate-600 hover:text-emerald-700 hover:bg-slate-100 focus:outline-none transition" aria-label="Toggle Navigation Menu">
+					<i id="mobileMenuIcon" class="fa-solid fa-bars text-xl"></i>
+				</button>
 			</div>
 
+		</div>
+
+		<!-- Mobile Navigation Menu (Drawer/Dropdown) -->
+		<div id="mobileMenu" class="hidden md:hidden border-t border-slate-100 bg-white/95 backdrop-blur-md px-4 pt-3 pb-5 space-y-1 shadow-lg transition-all duration-200">
+			<a href="#fitur" class="mobile-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:text-emerald-700 hover:bg-emerald-50/70 transition">
+				<i class="fa-solid fa-star text-emerald-600 w-5"></i> Fitur Utama
+			</a>
+			<a href="#audiens" class="mobile-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:text-emerald-700 hover:bg-emerald-50/70 transition">
+				<i class="fa-solid fa-users text-emerald-600 w-5"></i> Untuk Siapa
+			</a>
+			<a href="#alur" class="mobile-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:text-emerald-700 hover:bg-emerald-50/70 transition">
+				<i class="fa-solid fa-route text-emerald-600 w-5"></i> Alur Tahfidz
+			</a>
+			<a href="#tentang" class="mobile-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:text-emerald-700 hover:bg-emerald-50/70 transition">
+				<i class="fa-solid fa-circle-info text-emerald-600 w-5"></i> Tentang
+			</a>
+			<a href="<?php echo site_url('statistik'); ?>" class="mobile-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-emerald-700 bg-emerald-50/50 hover:bg-emerald-50 transition">
+				<i class="fa-solid fa-chart-simple text-emerald-600 w-5"></i> Statistik
+			</a>
 		</div>
 	</header>
 
@@ -456,6 +480,50 @@
 
 		</div>
 	</footer>
+
+	<!-- Mobile Menu Toggle Script -->
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+			const mobileMenu = document.getElementById('mobileMenu');
+			const mobileMenuIcon = document.getElementById('mobileMenuIcon');
+			const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+
+			if (mobileMenuBtn && mobileMenu) {
+				mobileMenuBtn.addEventListener('click', function(e) {
+					e.stopPropagation();
+					const isExpanded = mobileMenu.classList.contains('hidden');
+					if (isExpanded) {
+						mobileMenu.classList.remove('hidden');
+						mobileMenuIcon.classList.remove('fa-bars');
+						mobileMenuIcon.classList.add('fa-xmark');
+					} else {
+						mobileMenu.classList.add('hidden');
+						mobileMenuIcon.classList.remove('fa-xmark');
+						mobileMenuIcon.classList.add('fa-bars');
+					}
+				});
+
+				// Close menu when clicking on any mobile nav anchor link
+				mobileNavLinks.forEach(function(link) {
+					link.addEventListener('click', function() {
+						mobileMenu.classList.add('hidden');
+						mobileMenuIcon.classList.remove('fa-xmark');
+						mobileMenuIcon.classList.add('fa-bars');
+					});
+				});
+
+				// Close menu when clicking outside
+				document.addEventListener('click', function(e) {
+					if (!mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+						mobileMenu.classList.add('hidden');
+						mobileMenuIcon.classList.remove('fa-xmark');
+						mobileMenuIcon.classList.add('fa-bars');
+					}
+				});
+			}
+		});
+	</script>
 
 </body>
 </html>
