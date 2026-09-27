@@ -69,8 +69,10 @@ $route['api/auth/logout']     = 'api/auth/logout';
 
 $route['api/dashboard']       = 'api/dashboard/index';
 
-$route['api/setoran']         = 'api/setoran/index';       // GET list
-$route['api/setoran/simpan']  = 'api/setoran/simpan';      // POST (multipart, dukung audio)
+$route['api/setoran']               = 'api/setoran/index';       // GET list
+$route['api/setoran/simpan']        = 'api/setoran/simpan';      // POST (multipart, dukung audio)
+$route['api/setoran/update/(:num)'] = 'api/setoran/update/$1';    // POST update penilaian
+$route['api/setoran/hapus/(:num)']  = 'api/setoran/hapus/$1';     // POST hapus setoran
 
 $route['api/riwayat']         = 'api/riwayat/index';
 $route['api/progress']        = 'api/progress/index';

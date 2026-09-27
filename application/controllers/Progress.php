@@ -59,9 +59,12 @@ class Progress extends MY_Controller
 		$progress_juz_map = array();
 		$total_juz_tuntas = 0;
 
+		$this->load->library('Poin_calculator');
+
 		if ($siswa_aktif) {
 			$raw_progress = $this->Setoran_model->get_progress_juz_by_nisn($siswa_aktif->nisn);
 			foreach ($raw_progress as $p) {
+				$p->murojaah_info = $this->poin_calculator->hitung_status_murojaah($p->tanggal_terakhir);
 				$progress_juz_map[(int)$p->juz] = $p;
 			}
 			$total_juz_tuntas = count($progress_juz_map);

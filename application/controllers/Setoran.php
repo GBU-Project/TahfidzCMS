@@ -106,6 +106,7 @@ class Setoran extends MY_Controller
 			'siswa_list'         => $siswa_list,
 			'kelas_list'         => $kelas_list,
 			'daftar_surat'       => $this->poin_calculator->get_daftar_surat(),
+			'metadata_surat'     => $this->poin_calculator->get_metadata_surat(),
 			'jenis_setoran_list' => Poin_calculator::JENIS_SETORAN_LABEL,
 			'auto_kode'          => $this->Setoran_model->generate_kode_setoran(),
 			'default_date'       => date('Y-m-d'),
@@ -155,6 +156,17 @@ class Setoran extends MY_Controller
 		if ($this->is_guru() && ! in_array((int) $siswa->kelas_id, $this->kelas_diizinkan, TRUE)) {
 			$this->session->set_flashdata('error', 'Anda tidak memiliki hak untuk menginput setoran siswa di kelas ini.');
 			redirect('setoran/tambah');
+			return;
+		}
+
+		// Validasi batas ayat sesuai standar Al-Qur'an
+		$surat_input       = $this->input->post('surat', TRUE);
+		$ayat_dari_input   = (int) $this->input->post('ayat_dari');
+		$ayat_sampai_input = (int) $this->input->post('ayat_sampai');
+		$validasi_ayat     = $this->poin_calculator->validasi_rentang_ayat($surat_input, $ayat_dari_input, $ayat_sampai_input);
+		if (! $validasi_ayat['valid']) {
+			$this->session->set_flashdata('error', $validasi_ayat['pesan']);
+			$this->tambah();
 			return;
 		}
 

@@ -24,6 +24,7 @@ class Riwayat extends MY_API_Controller
 		$kelas_id      = $this->input->get('kelas_id');
 		$nisn          = $this->input->get('nisn');
 		$keterangan    = $this->input->get('keterangan');
+		$jenis_setoran = $this->input->get('jenis_setoran');
 		$tanggal_awal  = $this->input->get('tanggal_awal');
 		$tanggal_akhir = $this->input->get('tanggal_akhir');
 		$search        = $this->input->get('q');
@@ -33,6 +34,7 @@ class Riwayat extends MY_API_Controller
 
 		$filter = array(
 			'keterangan'    => $keterangan,
+			'jenis_setoran' => $jenis_setoran,
 			'tanggal_awal'  => $tanggal_awal,
 			'tanggal_akhir' => $tanggal_akhir,
 			'search'        => $search,

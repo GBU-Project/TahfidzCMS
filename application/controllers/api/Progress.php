@@ -47,10 +47,12 @@ class Progress extends MY_API_Controller
 			return;
 		}
 
+		$this->load->library('Poin_calculator');
 		$raw_progress = $this->Setoran_model->get_progress_juz_by_nisn($siswa_aktif->nisn);
 
 		$progress_juz_map = array();
 		foreach ($raw_progress as $p) {
+			$p->murojaah_info = $this->poin_calculator->hitung_status_murojaah($p->tanggal_terakhir);
 			$progress_juz_map[(int) $p->juz] = $p;
 		}
 

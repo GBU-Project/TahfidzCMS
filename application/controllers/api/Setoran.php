@@ -119,6 +119,13 @@ class Setoran extends MY_API_Controller
 			return;
 		}
 
+		// Validasi batas ayat sesuai standar 114 surat Al-Qur'an
+		$validasi_ayat = $this->poin_calculator->validasi_rentang_ayat($surat, $ayat_dari, $ayat_sampai);
+		if (! $validasi_ayat['valid']) {
+			$this->json_error($validasi_ayat['pesan'], 422);
+			return;
+		}
+
 		// Upload audio bukti jika dilampirkan
 		$upload = $this->upload_handler->upload_audio_setoran('audio_bukti');
 		if (! $upload['success']) {
@@ -166,6 +173,119 @@ class Setoran extends MY_API_Controller
 		} catch (Exception $e) {
 			log_message('error', 'Gagal menyimpan setoran (api): ' . $e->getMessage());
 			$this->json_error('Gagal menyimpan setoran. Silakan coba lagi atau hubungi administrator.', 500);
+		}
+	}
+
+	/**
+	 * POST /api/setoran/update/(:num)
+	 * Role yang diperbolehkan: admin, guru
+	 * Mengoreksi evaluasi penilaian setoran dan menghitung ulang poin santri otomatis.
+	 */
+	public function update($id = null)
+	{
+		$this->require_role(array('admin', 'guru'));
+
+		$id = (int) $id;
+		if (! $id) {
+			$this->json_error('ID setoran tidak valid.', 400);
+			return;
+		}
+
+		$setoran = $this->Setoran_model->get_by_id($id);
+		if (! $setoran) {
+			$this->json_error('Data setoran tidak ditemukan.', 404);
+			return;
+		}
+
+		if ($this->is_guru() && ! in_array((int) $setoran->kelas_id, $this->kelas_diizinkan, TRUE)) {
+			$this->json_error('Anda tidak memiliki hak untuk mengubah setoran ini.', 403);
+			return;
+		}
+
+		$jenis_setoran    = $this->input->post('jenis_setoran', TRUE);
+		$jumlah_kesalahan = $this->input->post('jumlah_kesalahan');
+		$kualitas_bacaan  = $this->input->post('kualitas_bacaan', TRUE);
+		$hasil_qc         = $this->input->post('hasil_qc', TRUE);
+		$catatan          = $this->input->post('catatan', TRUE);
+
+		if (! $jenis_setoran || $jumlah_kesalahan === null || ! $kualitas_bacaan) {
+			$this->json_error('Field jenis_setoran, jumlah_kesalahan, dan kualitas_bacaan wajib diisi.', 422);
+			return;
+		}
+
+		$jenis_setoran   = strtolower(trim($jenis_setoran));
+		$kualitas_bacaan = strtolower(trim($kualitas_bacaan));
+
+		if (! in_array($jenis_setoran, array('ziyadah', 'murojaah', 'qc'), TRUE)) {
+			$this->json_error('jenis_setoran harus: ziyadah, murojaah, atau qc.', 422);
+			return;
+		}
+
+		if (! in_array($kualitas_bacaan, array('baik', 'kurang_baik'), TRUE)) {
+			$this->json_error('kualitas_bacaan harus: baik atau kurang_baik.', 422);
+			return;
+		}
+
+		if ($jenis_setoran === 'qc' && ! in_array($hasil_qc, array('layak_tasmi', 'belum_layak'), TRUE)) {
+			$this->json_error('hasil_qc wajib diisi (layak_tasmi / belum_layak) untuk jenis_setoran qc.', 422);
+			return;
+		}
+
+		$update_data = array(
+			'jenis_setoran'      => $jenis_setoran,
+			'jumlah_kesalahan'   => (int) $jumlah_kesalahan,
+			'kualitas_bacaan'    => $kualitas_bacaan,
+			'hasil_qc'           => ($jenis_setoran === 'qc') ? $hasil_qc : null,
+			'catatan'            => $catatan ?: null,
+			'guru_pengoreksi_id' => $this->user->id,
+		);
+
+		try {
+			$this->Setoran_model->update_penilaian($id, $update_data);
+			$updated = $this->Setoran_model->get_by_id($id);
+			if ($updated && ! empty($updated->audio_bukti)) {
+				$updated->audio_url = base_url($updated->audio_bukti);
+			}
+
+			$this->json_success($updated, 'Penilaian setoran berhasil diperbarui.');
+		} catch (Exception $e) {
+			log_message('error', 'Gagal update penilaian (api): ' . $e->getMessage());
+			$this->json_error('Gagal memperbarui penilaian: ' . $e->getMessage(), 500);
+		}
+	}
+
+	/**
+	 * POST /api/setoran/hapus/(:num)
+	 * Role yang diperbolehkan: admin, guru
+	 * Hapus setoran dan kurangi poin siswa terkait secara atomik.
+	 */
+	public function hapus($id = null)
+	{
+		$this->require_role(array('admin', 'guru'));
+
+		$id = (int) $id;
+		if (! $id) {
+			$this->json_error('ID setoran tidak valid.', 400);
+			return;
+		}
+
+		$setoran = $this->Setoran_model->get_by_id($id);
+		if (! $setoran) {
+			$this->json_error('Data setoran tidak ditemukan.', 404);
+			return;
+		}
+
+		if ($this->is_guru() && ! in_array((int) $setoran->kelas_id, $this->kelas_diizinkan, TRUE)) {
+			$this->json_error('Anda tidak memiliki hak untuk menghapus setoran ini.', 403);
+			return;
+		}
+
+		try {
+			$this->Setoran_model->delete($id);
+			$this->json_success(array('id' => $id, 'nisn' => $setoran->nisn), 'Setoran berhasil dihapus dan poin santri telah disesuaikan.');
+		} catch (Exception $e) {
+			log_message('error', 'Gagal menghapus setoran (api): ' . $e->getMessage());
+			$this->json_error('Gagal menghapus setoran: ' . $e->getMessage(), 500);
 		}
 	}
 }

@@ -36,6 +36,16 @@
 			<?php endif; ?>
 
 			<div>
+				<label class="block text-xs font-medium text-gray-600 mb-1">Jenis Setoran</label>
+				<select name="jenis_setoran" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
+					<option value="">-- Semua Jenis --</option>
+					<option value="ziyadah" <?php echo (isset($selected_jenis) && $selected_jenis === 'ziyadah') ? 'selected' : ''; ?>>Ziyadah (Hafalan Baru)</option>
+					<option value="murojaah" <?php echo (isset($selected_jenis) && $selected_jenis === 'murojaah') ? 'selected' : ''; ?>>Muroja'ah (Pengulangan)</option>
+					<option value="qc" <?php echo (isset($selected_jenis) && $selected_jenis === 'qc') ? 'selected' : ''; ?>>Quality Control (QC)</option>
+				</select>
+			</div>
+
+			<div>
 				<label class="block text-xs font-medium text-gray-600 mb-1">Predikat Kelancaran</label>
 				<select name="keterangan" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
 					<option value="">-- Semua Predikat --</option>
@@ -70,7 +80,7 @@
 			<button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition shadow-sm">
 				<i class="fa-solid fa-filter mr-1"></i> Terapkan Filter
 			</button>
-			<?php if ($selected_kelas || $selected_nisn || $selected_keterangan || $tanggal_awal || $tanggal_akhir || $search): ?>
+			<?php if ($selected_kelas || $selected_nisn || $selected_keterangan || (isset($selected_jenis) && $selected_jenis) || $tanggal_awal || $tanggal_akhir || $search): ?>
 				<a href="<?php echo site_url('riwayat'); ?>" class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">Reset Filter</a>
 			<?php endif; ?>
 		</div>

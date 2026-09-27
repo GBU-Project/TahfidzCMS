@@ -65,14 +65,15 @@
 
 				<div class="md:col-span-3">
 					<label class="block text-sm font-medium text-gray-700 mb-1">Nama Surat <span class="text-red-500">*</span></label>
-					<select name="surat" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
+					<select name="surat" id="select-surat" onchange="onSuratChange()" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
 						<option value="">-- Pilih Surat --</option>
-						<?php foreach ($daftar_surat as $no => $nama_surat): ?>
-							<option value="<?php echo htmlspecialchars($nama_surat); ?>">
-								<?php echo $no . '. ' . htmlspecialchars($nama_surat); ?>
+						<?php foreach ($metadata_surat as $no => $item): ?>
+							<option value="<?php echo htmlspecialchars($item['nama']); ?>" data-no="<?php echo $no; ?>" data-ayat="<?php echo $item['ayat']; ?>" data-juz="<?php echo $item['juz']; ?>">
+								<?php echo $no . '. ' . htmlspecialchars($item['nama']) . ' (' . $item['ayat'] . ' ayat - Juz ' . $item['juz'] . ')'; ?>
 							</option>
 						<?php endforeach; ?>
 					</select>
+					<p id="help-surat" class="text-xs text-emerald-600 mt-1 hidden"></p>
 				</div>
 
 				<div class="md:col-span-2">
@@ -352,6 +353,31 @@ const KETERANGAN_RECOMMENDATIONS = {
 		'TL': { title: 'Tidak Lancar (TL)', desc: '≥ 3 Kesalahan per 2 Halaman', action: 'Mengulang Hafalan', border: 'border-rose-300 bg-rose-50' }
 	}
 };
+
+function onSuratChange() {
+	const sel = document.getElementById('select-surat');
+	const opt = sel.options[sel.selectedIndex];
+	const maxAyat = opt ? parseInt(opt.getAttribute('data-ayat')) : null;
+	const juz = opt ? opt.getAttribute('data-juz') : null;
+	const help = document.getElementById('help-surat');
+	const inputDari = document.getElementById('ayat_dari');
+	const inputSampai = document.getElementById('ayat_sampai');
+	const inputJuz = document.querySelector('input[name="juz"]');
+
+	if (maxAyat) {
+		inputDari.max = maxAyat;
+		inputSampai.max = maxAyat;
+		if (juz && !inputJuz.value) {
+			inputJuz.value = juz;
+		}
+		help.innerText = `Surat ini memiliki ${maxAyat} ayat (Juz awal: ${juz}). Maksimum ayat: ${maxAyat}.`;
+		help.classList.remove('hidden');
+	} else {
+		inputDari.removeAttribute('max');
+		inputSampai.removeAttribute('max');
+		help.classList.add('hidden');
+	}
+}
 
 function togglePanduanRubrik() {
 	const content = document.getElementById('content-panduan-rubrik');
