@@ -34,3 +34,8 @@ $db['default'] = array(
 	'failover' => array(),
 	'save_queries' => TRUE
 );
+
+// Load konfigurasi database lokal jika ada (file ini diabaikan oleh git)
+if (file_exists(__DIR__ . '/database.php.local')) {
+	include __DIR__ . '/database.php.local';
+}
