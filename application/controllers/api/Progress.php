@@ -36,7 +36,7 @@ class Progress extends MY_API_Controller
 
 			$siswa_aktif = $this->Siswa_model->get_by_nisn($selected_nisn);
 
-			if ($siswa_aktif && $this->is_guru() && ! in_array((int) $siswa_aktif->kelas_id, $this->kelas_diizinkan, TRUE)) {
+			if ($siswa_aktif && $this->is_guru() && ! $this->Siswa_model->ikut_kelas($siswa_aktif->nisn, $this->kelas_diizinkan)) {
 				$this->json_error('Anda tidak memiliki akses ke siswa di kelas ini.', 403);
 				return;
 			}

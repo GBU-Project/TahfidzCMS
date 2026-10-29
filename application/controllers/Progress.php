@@ -46,7 +46,7 @@ class Progress extends MY_Controller
 				// di kelas yang diampunya, konsisten dengan validasi yang
 				// sudah ada di api/Progress.php. Tanpa ini, guru bisa melihat
 				// progress siswa kelas lain hanya dengan mengganti ?nisn=...
-				if ($siswa_aktif && $this->is_guru() && ! in_array((int) $siswa_aktif->kelas_id, $this->kelas_diizinkan, TRUE)) {
+				if ($siswa_aktif && $this->is_guru() && ! $this->Siswa_model->ikut_kelas($siswa_aktif->nisn, $this->kelas_diizinkan)) {
 					show_error('Anda tidak memiliki akses ke siswa di kelas ini.', 403, 'Akses Ditolak');
 					return;
 				}

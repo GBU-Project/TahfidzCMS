@@ -50,7 +50,7 @@ Dokumen ini menjelaskan langkah-langkah instalasi aplikasi **TahfidzCMS** (CodeI
 
 ### Langkah 4: Pemasangan Skema Database
 1. **Step 3 (Skema DB)**: Sistem akan memverifikasi apakah database baru atau sudah berisi tabel lama.
-2. Pilih **Fresh Installation** untuk memasang skema tabel resmi TahfidzCMS (`users`, `kelas`, `guru_kelas`, `siswa`, `setoran`, `api_tokens`).
+2. Pilih **Fresh Installation** untuk memasang skema tabel resmi TahfidzCMS (`users`, `kelas`, `guru_kelas`, `siswa`, `siswa_kelas`, `setoran`, `api_tokens`).
 3. Klik **Pasang Skema & Lanjut**.
 
 ### Langkah 5: Pembuatan Akun Super Admin

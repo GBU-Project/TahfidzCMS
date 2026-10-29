@@ -51,6 +51,7 @@ class Users extends MY_Controller
 		$user = null;
 		$siswa = null;
 		$kelas_guru_ids = array();
+		$kelas_siswa_ids = array();
 
 		if ($id) {
 			$user = $this->User_model->get_by_id($id);
@@ -62,6 +63,7 @@ class Users extends MY_Controller
 
 			if ($user->role === 'siswa') {
 				$siswa = $this->Siswa_model->get_by_nisn($user->username);
+				$kelas_siswa_ids = $siswa ? $this->Siswa_model->get_kelas_ids($siswa->nisn) : array();
 			} elseif ($user->role === 'guru') {
 				$kelas_guru_ids = $this->Guru_kelas_model->get_kelas_ids_by_guru($user->id);
 			}
@@ -72,6 +74,7 @@ class Users extends MY_Controller
 			'user'           => $user,
 			'siswa'          => $siswa,
 			'kelas_guru_ids' => $kelas_guru_ids,
+			'kelas_siswa_ids' => $kelas_siswa_ids,
 			'kelas_list'     => $this->Kelas_model->get_all(),
 		);
 
@@ -82,7 +85,7 @@ class Users extends MY_Controller
 	 * POST /users/simpan
 	 * Field umum : id (kosong=baru), nama, username, password, role, foto
 	 * Field guru : kelas_ids[]  (checkbox multi kelas yang diampu)
-	 * Field siswa: kelas_id, target_juz
+	 * Field siswa: kelas_siswa[] (boleh lebih dari satu kelas), target_juz
 	 */
 	public function simpan()
 	{
@@ -99,7 +102,7 @@ class Users extends MY_Controller
 		}
 
 		if ($role === 'siswa') {
-			$this->form_validation->set_rules('kelas_id', 'Kelas', 'required|numeric');
+			$this->form_validation->set_rules('kelas_siswa[]', 'Kelas', 'required');
 			$this->form_validation->set_rules('target_juz', 'Target Juz', 'required|numeric|greater_than[0]|less_than_equal_to[30]');
 		}
 
@@ -157,9 +160,14 @@ class Users extends MY_Controller
 			if ($role === 'siswa') {
 				$nisn = $user_data['username'];
 
+				$kelas_pilih = array_values(array_filter(array_map('intval', (array) $this->input->post('kelas_siswa'))));
+				if (empty($kelas_pilih)) {
+					throw new Exception('Pilih minimal satu kelas.');
+				}
+
 				$siswa_data = array(
 					'nama'       => $user_data['nama'],
-					'kelas_id'   => $this->input->post('kelas_id'),
+					'kelas_id'   => $kelas_pilih[0], // kelas utama; poin dicatat per kelas di siswa_kelas
 					'target_juz' => $this->input->post('target_juz'),
 					'user_id'    => $user_id,
 				);
@@ -169,6 +177,11 @@ class Users extends MY_Controller
 				} else {
 					$siswa_data['nisn'] = $nisn;
 					$this->Siswa_model->create($siswa_data);
+				}
+
+				$hasil = $this->Siswa_model->set_kelas($nisn, $kelas_pilih);
+				if ($hasil !== TRUE) {
+					throw new Exception($hasil);
 				}
 			}
 

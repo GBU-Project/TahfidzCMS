@@ -164,14 +164,59 @@ class Setoran_model extends CI_Model
 	 */
 	public function get_by_id($id)
 	{
-		return $this->db->select('setoran.*, siswa.nama AS nama_siswa, siswa.total_poin AS siswa_total_poin, siswa.badge AS siswa_badge, kelas.nama_kelas, guru.nama AS nama_guru')
+		return $this->db->select('setoran.*, siswa.nama AS nama_siswa, sk.total_poin AS siswa_total_poin, sk.badge AS siswa_badge, kelas.nama_kelas, guru.nama AS nama_guru')
 			->from($this->table)
 			->join('siswa', 'siswa.nisn = setoran.nisn', 'left')
+			->join('siswa_kelas sk', 'sk.nisn = setoran.nisn AND sk.kelas_id = setoran.kelas_id', 'left')
 			->join('kelas', 'kelas.id = setoran.kelas_id', 'left')
 			->join('users AS guru', 'guru.id = setoran.guru_pengoreksi_id', 'left')
 			->where('setoran.id', $id)
 			->get()
 			->row();
+	}
+
+	/**
+	 * Ubah poin PER KELAS (siswa_kelas) secara atomic, hitung ulang badge kelas,
+	 * lalu segarkan ringkasan gabungan di tabel siswa (jumlah semua kelas).
+	 * Harus dipanggil di dalam transaction milik pemanggil.
+	 *
+	 * @param string $nisn
+	 * @param int    $kelas_id
+	 * @param int    $delta    boleh negatif
+	 */
+	private function ubah_poin($nisn, $kelas_id, $delta)
+	{
+		$delta = (int) $delta;
+
+		// Jaga-jaga: keanggotaan kelas belum tercatat (data lama) -> buat dulu.
+		$this->db->query(
+			'INSERT IGNORE INTO siswa_kelas (nisn, kelas_id, total_poin, badge) VALUES (?, ?, 0, ?)',
+			array($nisn, (int) $kelas_id, 'Pemula')
+		);
+
+		if ($delta !== 0) {
+			$this->db->set('total_poin', 'GREATEST(total_poin + (' . $delta . '), 0)', FALSE)
+				->where('nisn', $nisn)->where('kelas_id', (int) $kelas_id)
+				->update('siswa_kelas');
+		}
+
+		$row = $this->db->select('total_poin')
+			->where('nisn', $nisn)->where('kelas_id', (int) $kelas_id)
+			->get('siswa_kelas')->row();
+		if ($row) {
+			$this->db->update('siswa_kelas',
+				array('badge' => $this->poin_calculator->hitung_badge($row->total_poin)),
+				array('nisn' => $nisn, 'kelas_id' => (int) $kelas_id)
+			);
+		}
+
+		// Ringkasan gabungan semua kelas (untuk profil/rapor).
+		$sum = $this->db->select_sum('total_poin', 'total')->where('nisn', $nisn)->get('siswa_kelas')->row();
+		$total = $sum ? max(0, (int) $sum->total) : 0;
+		$this->db->update('siswa',
+			array('total_poin' => $total, 'badge' => $this->poin_calculator->hitung_badge($total)),
+			array('nisn' => $nisn)
+		);
 	}
 
 	/**
@@ -219,17 +264,8 @@ class Setoran_model extends CI_Model
 		$kode_final = sprintf('STR-%06d', $insert_id);
 		$this->db->update($this->table, array('kode_setoran' => $kode_final), array('id' => $insert_id));
 
-		// 3. Atomic update total_poin siswa
-		$this->db->set('total_poin', 'total_poin + ' . (int) $poin, FALSE)
-			->where('nisn', $data['nisn'])
-			->update('siswa');
-
-		// 4. Ambil total poin terbaru untuk evaluasi badge
-		$siswa = $this->db->select('total_poin')->where('nisn', $data['nisn'])->get('siswa')->row();
-		if ($siswa) {
-			$new_badge = $this->poin_calculator->hitung_badge($siswa->total_poin);
-			$this->db->update('siswa', array('badge' => $new_badge), array('nisn' => $data['nisn']));
-		}
+		// 3. Atomic update poin & badge PER KELAS (+ ringkasan siswa)
+		$this->ubah_poin($data['nisn'], $data['kelas_id'], (int) $poin);
 
 		if ($this->db->trans_status() === FALSE) {
 			$this->db->trans_rollback();
@@ -287,22 +323,8 @@ class Setoran_model extends CI_Model
 		// 1. Update baris setoran
 		$this->db->update($this->table, $data, array('id' => $id));
 
-		// 2. Sesuaikan total_poin siswa jika ada selisih
-		if ($selisih !== 0) {
-			$operator = $selisih > 0 ? '+' : '-';
-			$abs_selisih = abs($selisih);
-
-			$this->db->set('total_poin', "total_poin {$operator} {$abs_selisih}", FALSE)
-				->where('nisn', $setoran->nisn)
-				->update('siswa');
-		}
-
-		// 3. Update badge berdasarkan total poin terbaru
-		$siswa = $this->db->select('total_poin')->where('nisn', $setoran->nisn)->get('siswa')->row();
-		if ($siswa) {
-			$new_badge = $this->poin_calculator->hitung_badge($siswa->total_poin);
-			$this->db->update('siswa', array('badge' => $new_badge), array('nisn' => $setoran->nisn));
-		}
+		// 2. Sesuaikan poin & badge di kelas tempat setoran ini dibuat
+		$this->ubah_poin($setoran->nisn, $setoran->kelas_id, $selisih);
 
 		if ($this->db->trans_status() === FALSE) {
 			$this->db->trans_rollback();
@@ -332,18 +354,8 @@ class Setoran_model extends CI_Model
 		// 1. Hapus baris setoran
 		$this->db->delete($this->table, array('id' => $id));
 
-		// 2. Kurangi poin siswa
-		$this->db->set('total_poin', 'total_poin - ' . (int) $setoran->poin, FALSE)
-			->where('nisn', $setoran->nisn)
-			->update('siswa');
-
-		// 3. Hitung ulang badge
-		$siswa = $this->db->select('total_poin')->where('nisn', $setoran->nisn)->get('siswa')->row();
-		if ($siswa) {
-			$total = max(0, (int) $siswa->total_poin);
-			$new_badge = $this->poin_calculator->hitung_badge($total);
-			$this->db->update('siswa', array('total_poin' => $total, 'badge' => $new_badge), array('nisn' => $setoran->nisn));
-		}
+		// 2. Kurangi poin & hitung ulang badge di kelas setoran tsb
+		$this->ubah_poin($setoran->nisn, $setoran->kelas_id, -((int) $setoran->poin));
 
 		if ($this->db->trans_status() === FALSE) {
 			$this->db->trans_rollback();

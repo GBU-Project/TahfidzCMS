@@ -20,10 +20,10 @@
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 				<div class="md:col-span-2">
 					<label class="block text-sm font-medium text-gray-700 mb-1">Pilih Santri / Siswa <span class="text-red-500">*</span></label>
-					<select name="nisn" id="select-siswa" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
+					<select name="siswa_kelas" id="select-siswa" required class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
 						<option value="">-- Cari & Pilih Siswa --</option>
 						<?php foreach ($siswa_list as $s): ?>
-							<option value="<?php echo $s->nisn; ?>" data-kelas="<?php echo htmlspecialchars($s->nama_kelas); ?>" data-badge="<?php echo htmlspecialchars($s->badge); ?>">
+							<option value="<?php echo htmlspecialchars($s->nisn . '|' . $s->kelas_id); ?>" data-kelas="<?php echo htmlspecialchars($s->nama_kelas); ?>" data-badge="<?php echo htmlspecialchars($s->badge); ?>">
 								<?php echo htmlspecialchars($s->nama); ?> (<?php echo $s->nisn; ?>) — Kelas <?php echo htmlspecialchars($s->nama_kelas); ?>
 							</option>
 						<?php endforeach; ?>

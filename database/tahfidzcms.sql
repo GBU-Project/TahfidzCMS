@@ -119,6 +119,26 @@ CREATE TABLE `siswa` (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
+-- 3b. TABEL SISWA_KELAS
+-- Satu santri boleh ikut beberapa kelas/halaqah (mis. Hafalan, Murojaah,
+-- Quality Control). Poin & badge dicatat TERPISAH per kelas di sini.
+-- siswa.kelas_id = "kelas utama"; siswa.total_poin/badge = ringkasan semua kelas.
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `siswa_kelas`;
+CREATE TABLE `siswa_kelas` (
+  `nisn`       VARCHAR(20)  NOT NULL,
+  `kelas_id`   INT UNSIGNED NOT NULL,
+  `total_poin` INT          NOT NULL DEFAULT 0,
+  `badge`      VARCHAR(50)  NOT NULL DEFAULT 'Pemula',
+  `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`nisn`, `kelas_id`),
+  KEY `idx_sk_kelas` (`kelas_id`),
+  KEY `idx_sk_poin` (`total_poin`),
+  CONSTRAINT `fk_sk_siswa` FOREIGN KEY (`nisn`)     REFERENCES `siswa`(`nisn`) ON DELETE CASCADE,
+  CONSTRAINT `fk_sk_kelas` FOREIGN KEY (`kelas_id`) REFERENCES `kelas`(`id`)   ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
 -- 4. TABEL SETORAN
 -- Pengganti sheet 'setoran'. Ini tabel transaksi utama.
 -- id_setoran pakai AUTO_INCREMENT (bukan UUID manual) supaya urut & efisien untuk index.
@@ -243,5 +263,8 @@ FROM users u, kelas k WHERE u.username = '1001' AND k.nama_kelas = '7A';
 INSERT INTO `siswa` (`nisn`, `user_id`, `nama`, `kelas_id`, `target_juz`, `total_poin`, `badge`)
 SELECT '1002', u.id, 'Ahmad Fauzi', k.id, 30, 0, 'Pemula'
 FROM users u, kelas k WHERE u.username = '1002' AND k.nama_kelas = '7A';
+
+INSERT INTO `siswa_kelas` (`nisn`, `kelas_id`, `total_poin`, `badge`)
+SELECT nisn, kelas_id, total_poin, badge FROM siswa;
 
 SET FOREIGN_KEY_CHECKS = 1;

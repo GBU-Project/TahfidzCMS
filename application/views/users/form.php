@@ -74,15 +74,18 @@
 		<!-- Field khusus SISWA -->
 		<div id="field-siswa" class="hidden border-t pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
 			<div>
-				<label class="block text-xs font-medium text-gray-600 mb-1">Pilih Rombel / Kelas <span class="text-red-500">*</span></label>
-				<select name="kelas_id" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500">
-					<option value="">-- Pilih Kelas --</option>
+				<label class="block text-xs font-medium text-gray-600 mb-2">Kelas / Halaqah yang Diikuti <span class="text-red-500">*</span></label>
+				<div class="grid grid-cols-1 gap-2">
 					<?php foreach ($kelas_list as $k): ?>
-						<option value="<?php echo $k->id; ?>" <?php echo ($siswa && (int) $siswa->kelas_id === (int) $k->id) ? 'selected' : ''; ?>>
-							Kelas <?php echo htmlspecialchars($k->nama_kelas); ?>
-						</option>
+						<label class="flex items-center gap-2 text-sm p-2 rounded-xl bg-gray-50 border border-gray-100 hover:bg-emerald-50/50 cursor-pointer">
+							<input type="checkbox" name="kelas_siswa[]" value="<?php echo $k->id; ?>"
+								class="rounded text-emerald-600 focus:ring-emerald-500 kelas-siswa-cb"
+								<?php echo in_array((int) $k->id, $kelas_siswa_ids, TRUE) ? 'checked' : ''; ?>>
+							<span class="text-gray-700 font-medium">Kelas <?php echo htmlspecialchars($k->nama_kelas); ?></span>
+						</label>
 					<?php endforeach; ?>
-				</select>
+				</div>
+				<p class="text-[11px] text-gray-400 mt-1">Pilih lebih dari satu jika santri ikut beberapa halaqah (mis. Hafalan, Murojaah, QC). Poin dihitung terpisah per kelas.</p>
 			</div>
 			<div>
 				<label class="block text-xs font-medium text-gray-600 mb-1">Target Hafalan (Juz) <span class="text-red-500">*</span></label>

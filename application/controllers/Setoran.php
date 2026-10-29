@@ -98,7 +98,7 @@ class Setoran extends MY_Controller
 	public function tambah()
 	{
 		$kelas_ids = $this->is_guru() ? $this->kelas_diizinkan : array();
-		$siswa_list = $this->Siswa_model->get_all($kelas_ids);
+		$siswa_list = $this->Siswa_model->get_enrollments($kelas_ids); // satu baris per santri x kelas
 		$kelas_list = $this->is_guru() ? $this->Kelas_model->get_by_ids($this->kelas_diizinkan) : $this->Kelas_model->get_all();
 
 		$data = array(
@@ -121,7 +121,7 @@ class Setoran extends MY_Controller
 	 */
 	public function simpan()
 	{
-		$this->form_validation->set_rules('nisn', 'Siswa', 'required|trim');
+		$this->form_validation->set_rules('siswa_kelas', 'Siswa & Kelas', 'required|trim');
 		$this->form_validation->set_rules('tanggal', 'Tanggal', 'required|trim');
 		$this->form_validation->set_rules('waktu', 'Waktu', 'required|trim');
 		$this->form_validation->set_rules('juz', 'Juz', 'required|numeric|greater_than[0]|less_than_equal_to[30]');
@@ -143,7 +143,11 @@ class Setoran extends MY_Controller
 			return;
 		}
 
-		$nisn = $this->input->post('nisn', TRUE);
+		// Nilai form: "nisn|kelas_id" — santri yang sama bisa ada di beberapa
+		// kelas (Hafalan, Murojaah, QC), poin dicatat terpisah per kelas.
+		$pilihan  = explode('|', (string) $this->input->post('siswa_kelas', TRUE), 2);
+		$nisn     = isset($pilihan[0]) ? $pilihan[0] : '';
+		$kelas_id = isset($pilihan[1]) ? (int) $pilihan[1] : 0;
 		$siswa = $this->Siswa_model->get_by_nisn($nisn);
 
 		if (! $siswa) {
@@ -153,7 +157,14 @@ class Setoran extends MY_Controller
 		}
 
 		// Validasi otorisasi guru untuk siswa terkait
-		if ($this->is_guru() && ! in_array((int) $siswa->kelas_id, $this->kelas_diizinkan, TRUE)) {
+		// Santri harus benar-benar terdaftar di kelas yang dipilih.
+		if (! $this->Siswa_model->ikut_kelas($nisn, array($kelas_id))) {
+			$this->session->set_flashdata('error', 'Santri tidak terdaftar di kelas yang dipilih.');
+			redirect('setoran/tambah');
+			return;
+		}
+
+		if ($this->is_guru() && ! in_array($kelas_id, $this->kelas_diizinkan, TRUE)) {
 			$this->session->set_flashdata('error', 'Anda tidak memiliki hak untuk menginput setoran siswa di kelas ini.');
 			redirect('setoran/tambah');
 			return;
@@ -195,7 +206,7 @@ class Setoran extends MY_Controller
 			// insert_id, untuk menghindari race condition. Lihat komentar
 			// di Setoran_model::create().
 			'nisn'               => $nisn,
-			'kelas_id'           => $siswa->kelas_id, // denormalisasi sengaja untuk menjaga histori kelas
+			'kelas_id'           => $kelas_id, // kelas yang dipilih; denormalisasi sengaja untuk menjaga histori kelas
 			'tanggal'            => $this->input->post('tanggal', TRUE),
 			'waktu'              => $this->input->post('waktu', TRUE),
 			'juz'                => (int) $this->input->post('juz'),

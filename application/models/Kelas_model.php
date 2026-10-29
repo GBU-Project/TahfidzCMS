@@ -52,7 +52,7 @@ class Kelas_model extends CI_Model
 	 */
 	public function delete($id)
 	{
-		$jumlah_siswa = $this->db->where('kelas_id', $id)->count_all_results('siswa');
+		$jumlah_siswa = $this->db->where('kelas_id', $id)->count_all_results('siswa_kelas');
 
 		if ($jumlah_siswa > 0) {
 			return "Tidak bisa dihapus: masih ada {$jumlah_siswa} siswa terdaftar di kelas ini.";

@@ -114,7 +114,23 @@ class Setoran extends MY_API_Controller
 			return;
 		}
 
-		if ($this->is_guru() && ! in_array((int) $siswa->kelas_id, $this->kelas_diizinkan, TRUE)) {
+		// kelas_id: kelas tempat setoran dicatat. Wajib jika santri ikut >1 kelas;
+		// jika santri hanya ikut satu kelas, otomatis dipakai kelas itu.
+		$kelas_santri = $this->Siswa_model->get_kelas_ids($nisn);
+		$kelas_id = (int) $this->input->post('kelas_id');
+		if ($kelas_id === 0 && count($kelas_santri) === 1) {
+			$kelas_id = $kelas_santri[0];
+		}
+		if ($kelas_id === 0) {
+			$this->json_error('kelas_id wajib diisi: santri ini mengikuti beberapa kelas.', 422);
+			return;
+		}
+		if (! in_array($kelas_id, $kelas_santri, TRUE)) {
+			$this->json_error('Santri tidak terdaftar di kelas tersebut.', 422);
+			return;
+		}
+
+		if ($this->is_guru() && ! in_array($kelas_id, $this->kelas_diizinkan, TRUE)) {
 			$this->json_error('Anda tidak memiliki hak input untuk siswa di kelas ini.', 403);
 			return;
 		}
@@ -142,7 +158,7 @@ class Setoran extends MY_API_Controller
 			// 'kode_setoran' sengaja TIDAK di-generate di sini — lihat
 			// komentar di Setoran_model::create() soal race condition.
 			'nisn'               => $nisn,
-			'kelas_id'           => $siswa->kelas_id,
+			'kelas_id'           => $kelas_id,
 			'tanggal'            => $tanggal,
 			'waktu'              => $waktu,
 			'juz'                => $juz,

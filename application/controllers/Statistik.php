@@ -46,7 +46,7 @@ class Statistik extends CI_Controller
 		$data = array(
 			'title'        => 'Statistik Perkembangan Santri — ' . $settings['institution_name'],
 			'settings'     => $settings,
-			'total_santri' => $this->Siswa_model->count_siswa(),
+			'total_santri' => $this->Siswa_model->count_siswa_aktif(),
 			'total_kelas'  => count($this->Kelas_model->get_all()),
 			'ringkasan'    => $ringkasan,
 			'distribusi'   => $distribusi,
